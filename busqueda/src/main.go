@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/puyojulian/p1ia/busqueda/src/search"
+	"github.com/Krud3/InteligenciaArtificial/busqueda/src/search"
 )
 
 func main() {
