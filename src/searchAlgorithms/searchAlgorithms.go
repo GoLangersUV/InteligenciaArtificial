@@ -4,22 +4,49 @@ import (
   "time"
 )
 
+const (
+  WALL = iota + 1
+  INITPOSITION
+  MIDCOST
+  HEAVYCOST
+  DOG
+  GOAL
+)
+
 // enviroment represents the enviroment where the agent is going to move
 type enviroment struct {
   matrix [][]int
   initPosition, dogPosition, goalPosition [2]int
 }
 
+// NewEnviroment creates a new enviroment
 func NewEnviroment(matrix [][]int) *enviroment {
-  // TODO: Extract positions of agent, dog, and goal
+  initPosition := [2]int{0, 0}
+  dogPosition := [2]int{0, 0}
+  goalPosition := [2]int{0, 0}
+
+  for i, row := range matrix {
+    for j, cell := range row {
+      switch cell {
+      case INITPOSITION:
+        initPosition[0], initPosition[1] = i, j
+      case DOG:
+        dogPosition[0], dogPosition[1] = i, j
+      case GOAL:
+        goalPosition[0], goalPosition[1] = i, j
+      }
+    }
+  }
+
   return &enviroment{
-    matrix: matrix,
-    initPosition: [2]int{0, 0},
-    dogPosition: [2]int{0, 0},
-    goalPosition: [2]int{0, 0},
+    matrix,
+    initPosition,
+    dogPosition,
+    goalPosition,
   }
 }
 
+// GetAgentPosition returns the initial position of the agent
 func (e *enviroment) GetAgentPosition() *[2]int {
   return &e.initPosition
 }
@@ -32,19 +59,13 @@ type agent struct {
   dog bool
 }
 
+// NewAgent creates a new agent
 func NewAgent(x, y int, searchAlgorithm SearchAgorithm) *agent {
   return &agent{x, y, searchAlgorithm, [4]byte{}, false}
 }
 
-// generatePerception genera una percepción basada en el entorno
+// generatePerception generates the perception of the agent based on its position
 func (a *agent) generatePerception(env *enviroment) {
-  // Simulan los sensores
-  moveUp := a.x - 1
-  moveRight := a.y + 1
-  moveDown := a.x + 1
-  moveLeft := a.y - 1
-
-  const wall = 1
 
   const (
     Up = iota
@@ -53,7 +74,13 @@ func (a *agent) generatePerception(env *enviroment) {
     Left
   )
 
-  // Se genera una percepción
+  // simulate the agent senses
+  moveUp := a.x - 1
+  moveRight := a.y + 1
+  moveDown := a.x + 1
+  moveLeft := a.y - 1
+
+  // generates the perception of the agent
   if moveUp >= 0 && env.matrix[moveUp][a.y] != wall {
     a.ambientPerception[Up] = 1 
   } else {

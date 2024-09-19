@@ -13,13 +13,10 @@ func main() {
     {2,0,2,1},
   }
   enviroment := algorithms.NewEnviroment(envMatrix)
-  // El conocimiento se representa mediante una tabla. 
   
   amplitudeSearch := new(algorithms.AmplitudeSearch)
 
   agent := algorithms.NewAgent(enviroment.GetAgentPosition()[0], enviroment.GetAgentPosition()[1], amplitudeSearch)
 
-
   agent.SearchAlgorithm.LookForGoal(enviroment)
-
 }
