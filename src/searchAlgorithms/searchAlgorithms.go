@@ -4,56 +4,47 @@ import (
   "time"
 )
 
-const (
-  wall = iota + 1
-  goal
-)
-
 // enviroment represents the enviroment where the agent is going to move
 type enviroment struct {
   matrix [][]int
-  agentPosition, dogPosition, goalPosition [2]int
+  initPosition, dogPosition, goalPosition [2]int
 }
 
-func NewEnviroment(matrix [][]int, totalGoal int) *enviroment {
+func NewEnviroment(matrix [][]int) *enviroment {
   // TODO: Extract positions of agent, dog, and goal
   return &enviroment{
     matrix: matrix,
-    agentPosition: [2]int{0, 0},
+    initPosition: [2]int{0, 0},
     dogPosition: [2]int{0, 0},
     goalPosition: [2]int{0, 0},
   }
 }
 
+func (e *enviroment) GetAgentPosition() *[2]int {
+  return &e.initPosition
+}
+
 // agent represents the agent that is going to move in the enviroment
 type agent struct {
   x, y int
-  searchAlgorithm SearchAgorithm
+  SearchAlgorithm SearchAgorithm
   ambientPerception [4]byte
   dog bool
 }
 
-// MoveUp, MoveRight, MoveDown y MoveLeft son los actuadores del agente
-func (a *agent) MoveUp() {
-  a.x--
-}
-func (a *agent) MoveRight() {
-  a.y++
-}
-func (a *agent) MoveDown() {
-  a.x++
-}
-func (a *agent) MoveLeft() {
-  a.y--
+func NewAgent(x, y int, searchAlgorithm SearchAgorithm) *agent {
+  return &agent{x, y, searchAlgorithm, [4]byte{}, false}
 }
 
 // generatePerception genera una percepción basada en el entorno
-func (a *agent) generatePerception(env enviroment) {
+func (a *agent) generatePerception(env *enviroment) {
   // Simulan los sensores
   moveUp := a.x - 1
   moveRight := a.y + 1
   moveDown := a.x + 1
   moveLeft := a.y - 1
+
+  const wall = 1
 
   const (
     Up = iota
@@ -83,10 +74,6 @@ func (a *agent) generatePerception(env enviroment) {
   } else {
     a.ambientPerception[Left] = 0
   }
-}
-
-func NewAgent(x, y int, searchAlgorithm SearchAgorithm) *agent {
-  return &agent{x, y, searchAlgorithm, [4]byte{}, false}
 }
 
 // SearchAlgorithm is the interface that the search algorithms must implement
