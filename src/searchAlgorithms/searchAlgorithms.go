@@ -21,9 +21,7 @@ type enviroment struct {
 
 // NewEnviroment creates a new enviroment
 func NewEnviroment(matrix [][]int) *enviroment {
-  initPosition := [2]int{0, 0}
-  dogPosition := [2]int{0, 0}
-  goalPosition := [2]int{0, 0}
+  var initPosition, dogPosition, goalPosition [2]int
 
   for i, row := range matrix {
     for j, cell := range row {
@@ -66,7 +64,6 @@ func NewAgent(x, y int, searchAlgorithm SearchAgorithm) *agent {
 
 // generatePerception generates the perception of the agent based on its position
 func (a *agent) generatePerception(env *enviroment) {
-
   const (
     Up = iota
     Right
@@ -81,22 +78,22 @@ func (a *agent) generatePerception(env *enviroment) {
   moveLeft := a.y - 1
 
   // generates the perception of the agent
-  if moveUp >= 0 && env.matrix[moveUp][a.y] != wall {
+  if moveUp >= 0 && env.matrix[moveUp][a.y] != WALL {
     a.ambientPerception[Up] = 1 
   } else {
     a.ambientPerception[Up] = 0
   }
-  if moveRight < len(env.matrix[0]) && env.matrix[a.x][moveRight] != wall {
+  if moveRight < len(env.matrix[0]) && env.matrix[a.x][moveRight] != WALL {
     a.ambientPerception[Right] = 1
   } else {
     a.ambientPerception[Right] = 0
   }
-  if moveDown < len(env.matrix) && env.matrix[moveDown][a.y] != wall {
+  if moveDown < len(env.matrix) && env.matrix[moveDown][a.y] != WALL {
     a.ambientPerception[Down] = 1 
   } else {
     a.ambientPerception[Down] = 0
   }
-  if moveLeft >= 0 && env.matrix[a.x][moveLeft] != wall {
+  if moveLeft >= 0 && env.matrix[a.x][moveLeft] != WALL {
     a.ambientPerception[Left] = 1 
   } else {
     a.ambientPerception[Left] = 0
