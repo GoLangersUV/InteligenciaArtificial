@@ -1,106 +1,109 @@
 package searchAlgorithms
 
 import (
-  "time"
+  "fmt"
+	"time"
 )
 
 const (
-  WALL = iota + 1
-  INITPOSITION
-  MIDCOST
-  HEAVYCOST
-  DOG
-  GOAL
+	WALL = iota + 1
+	INIT_POSITION
+	MIDCOST
+	HEAVYCOST
+	DOG
+	GOAL
 )
 
-// enviroment represents the enviroment where the agent is going to move
-type enviroment struct {
-  matrix *[10][10]int
-  initPosition, dogPosition, goalPosition [2]int
+// Position representa una posición en la matriz.
+type Position struct {
+	X, Y int
 }
 
-// NewEnviroment creates a new enviroment
-func NewEnviroment(matrix [10][10]int) *enviroment {
-  var initPosition, dogPosition, goalPosition [2]int
-
-  for i, row := range matrix {
-    for j, cell := range row {
-      switch cell {
-      case INITPOSITION:
-        initPosition[0], initPosition[1] = i, j
-      case DOG:
-        dogPosition[0], dogPosition[1] = i, j
-      case GOAL:
-        goalPosition[0], goalPosition[1] = i, j
-      }
-    }
-  }
-
-  return &enviroment{
-    &matrix,
-    initPosition,
-    dogPosition,
-    goalPosition,
-  }
+// Environment representa el entorno donde el agente se moverá.
+type Environment struct {
+	Matrix        *[10][10]int
+	InitPosition  Position
+	DogPosition   Position
+	GoalPosition  Position
 }
 
-// GetAgentPosition returns the initial position of the agent
-func (e *enviroment) GetInitPosition() *[2]int {
-  return &e.initPosition
+// NewEnvironment crea un nuevo entorno a partir de una matriz.
+func NewEnvironment(matrix [10][10]int) (*Environment, error) {
+	var initPos, dogPos, goalPos Position
+	foundInit, foundDog, foundGoal := false, false, false
+
+	for i, row := range matrix {
+		for j, cell := range row {
+			switch cell {
+			case INIT_POSITION:
+				initPos = Position{X: i, Y: j}
+				foundInit = true
+			case DOG:
+				dogPos = Position{X: i, Y: j}
+				foundDog = true
+			case GOAL:
+				goalPos = Position{X: i, Y: j}
+				foundGoal = true
+			}
+		}
+	}
+
+	if !foundInit || !foundDog || !foundGoal {
+		return nil, fmt.Errorf("environment must have init, dog, and goal positions")
+	}
+
+	return &Environment{
+		Matrix:       &matrix,
+		InitPosition: initPos,
+		DogPosition:  dogPos,
+		GoalPosition: goalPos,
+	}, nil
 }
 
-// agent represents the agent that is going to move in the enviroment
-type agent struct {
-  x, y int
-  SearchAlgorithm SearchAgorithm
-  ambientPerception [4]byte
-  dog bool
+// Perception representa la percepción del agente en las cuatro direcciones.
+type Perception struct {
+	Up, Right, Down, Left bool
 }
 
-// NewAgent creates a new agent
-func NewAgent(x, y int, searchAlgorithm SearchAgorithm) *agent {
-  return &agent{x, y, searchAlgorithm, [4]byte{}, false}
+// Agent representa al agente que se moverá en el entorno.
+type Agent struct {
+	Position        Position
+	SearchAlgorithm SearchAlgorithm
+	Perception      Perception
+	Dog             bool
 }
 
-// generatePerception generates the perception of the agent based on its position
-func (a *agent) generatePerception(env *enviroment) {
-  const (
-    Up = iota
-    Right
-    Down
-    Left
-  )
-
-  // simulate the agent senses
-  moveUp := a.x - 1
-  moveRight := a.y + 1
-  moveDown := a.x + 1
-  moveLeft := a.y - 1
-
-  // generates the perception of the agent
-  if moveUp >= 0 && env.matrix[moveUp][a.y] != WALL {
-    a.ambientPerception[Up] = 1 
-  } else {
-    a.ambientPerception[Up] = 0
-  }
-  if moveRight < len(env.matrix[0]) && env.matrix[a.x][moveRight] != WALL {
-    a.ambientPerception[Right] = 1
-  } else {
-    a.ambientPerception[Right] = 0
-  }
-  if moveDown < len(env.matrix) && env.matrix[moveDown][a.y] != WALL {
-    a.ambientPerception[Down] = 1 
-  } else {
-    a.ambientPerception[Down] = 0
-  }
-  if moveLeft >= 0 && env.matrix[a.x][moveLeft] != WALL {
-    a.ambientPerception[Left] = 1 
-  } else {
-    a.ambientPerception[Left] = 0
-  }
+// SearchResult encapsula los resultados de una búsqueda.
+type SearchResult struct {
+	SolutionFound bool
+	ExpandedNodes int
+	TreeDepth     int
+	Cost          float32
+	TimeExecuted  time.Duration
+	Path          []Position
 }
 
-// SearchAlgorithm is the interface that the search algorithms must implement
-type SearchAgorithm interface {
-  LookForGoal(*enviroment) (solutionFound bool, expandenNodes, treeDepth, cost float32, timeExe time.Duration) 
+// SearchAlgorithm es la interfaz que deben implementar los algoritmos de búsqueda.
+type SearchAlgorithm interface {
+	LookForGoal(env *Environment) SearchResult
+}
+
+// NewAgent crea un nuevo agente.
+func NewAgent(pos Position, algo SearchAlgorithm) *Agent {
+	return &Agent{
+		Position:        pos,
+		SearchAlgorithm: algo,
+		Perception:      Perception{},
+		Dog:             false,
+	}
+}
+
+// GeneratePerception actualiza la percepción del agente basado en su posición.
+func (a *Agent) GeneratePerception(env *Environment) {
+	matrix := env.Matrix
+	x, y := a.Position.X, a.Position.Y
+	a.Perception.Up = x > 0 && matrix[x-1][y] != WALL
+	a.Perception.Right = y < len(matrix[0])-1 && matrix[x][y+1] != WALL
+	a.Perception.Down = x < len(matrix)-1 && matrix[x+1][y] != WALL
+	a.Perception.Left = y > 0 && matrix[x][y-1] != WALL
 }
