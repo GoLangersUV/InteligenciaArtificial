@@ -15,12 +15,12 @@ const (
 
 // enviroment represents the enviroment where the agent is going to move
 type enviroment struct {
-  matrix [][]int
+  matrix *[10][10]int
   initPosition, dogPosition, goalPosition [2]int
 }
 
 // NewEnviroment creates a new enviroment
-func NewEnviroment(matrix [][]int) *enviroment {
+func NewEnviroment(matrix [10][10]int) *enviroment {
   var initPosition, dogPosition, goalPosition [2]int
 
   for i, row := range matrix {
@@ -37,7 +37,7 @@ func NewEnviroment(matrix [][]int) *enviroment {
   }
 
   return &enviroment{
-    matrix,
+    &matrix,
     initPosition,
     dogPosition,
     goalPosition,
@@ -45,7 +45,7 @@ func NewEnviroment(matrix [][]int) *enviroment {
 }
 
 // GetAgentPosition returns the initial position of the agent
-func (e *enviroment) GetAgentPosition() *[2]int {
+func (e *enviroment) GetInitPosition() *[2]int {
   return &e.initPosition
 }
 
