@@ -5,6 +5,7 @@ import (
 
 	"github.com/Krud3/InteligenciaArtificial/src/game/entities"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type Game struct {
@@ -14,7 +15,7 @@ type Game struct {
 }
 
 func NewGame() (*Game, error) {
-	matrix, err := utils.GetMatrix() // Assuming this loads the matrix
+	matrix, err := utils.GetMatrix() // Load the matrix
 	if err != nil {
 		return nil, err
 	}
@@ -22,14 +23,36 @@ func NewGame() (*Game, error) {
 	// Create the scene
 	scene := NewScene(matrix)
 
-	// Create the car at its initial position using the scene's car start position
-	carPath := [][]int{
-		// Sample path or generate it using a search algorithm
+	// Load the car image
+	carImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/moto-1-narvaez.png")
+	if err != nil {
+		return nil, err
 	}
-	car := entities.NewCar(scene.CarPosX, scene.CarPosY, carPath)
 
-	// Optionally create a passenger if it has independent logic
-	passenger := entities.NewPassenger(scene.PassengerPosX, scene.PassengerPosY)
+	// Load the passenger image
+	passengerImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/moto-2-narvaez.png")
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the car
+	carPath := [][]int{
+		// Sample path or generate it
+	}
+	car := &entities.Car{
+		PosX:  scene.CarPosX,
+		PosY:  scene.CarPosY,
+		Path:  carPath,
+		Index: 0,
+		Image: carImage, // Assign the car image
+	}
+
+	// Create the passenger
+	passenger := &entities.Passenger{
+		PosX:  scene.PassengerPosX,
+		PosY:  scene.PassengerPosY,
+		Image: passengerImage, // Assign the passenger image
+	}
 
 	return &Game{
 		scene:     scene,

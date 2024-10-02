@@ -1,7 +1,10 @@
 package entities
 
+import "github.com/hajimehoshi/ebiten/v2"
+
 type Passenger struct {
 	PosX, PosY int
+	Image      *ebiten.Image
 }
 
 func NewPassenger(x, y int) *Passenger {

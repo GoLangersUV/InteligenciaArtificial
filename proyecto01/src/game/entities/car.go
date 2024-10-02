@@ -1,9 +1,12 @@
 package entities
 
+import "github.com/hajimehoshi/ebiten/v2"
+
 type Car struct {
 	PosX, PosY int     // Current position
 	Path       [][]int // List of positions to move through
 	Index      int     // Current index in the path
+	Image      *ebiten.Image
 }
 
 func NewCar(startX, startY int, path [][]int) *Car {
