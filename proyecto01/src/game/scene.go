@@ -31,6 +31,8 @@ type Scene struct {
 	CarPosY       int
 	PassengerPosX int
 	PassengerPosY int
+	GoalPosX      int
+	GoalPosY      int
 }
 
 func NewScene(matrix [][]int) *Scene {
@@ -70,6 +72,10 @@ func NewScene(matrix [][]int) *Scene {
 				scene.Grid[y][x] = Tile(0)
 				scene.PassengerPosX = x
 				scene.PassengerPosY = y
+			}
+			if Tile(val) == Goal {
+				scene.GoalPosX = x
+				scene.GoalPosY = y
 			}
 		}
 	}
