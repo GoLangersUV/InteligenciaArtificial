@@ -83,12 +83,12 @@ func NewScene(matrix [][]int) *Scene {
 	return scene
 }
 
-// func (s *Scene) Draw(screen *ebiten.Image) {
-// 	for y := 0; y < MaxSize; y++ {
-// 		for x := 0; x < MaxSize; x++ {
-// 			op := &ebiten.DrawImageOptions{}
-// 			op.GeoM.Translate(float64(x*TileSize), float64(y*TileSize))
-// 			screen.DrawImage(s.Images[s.Grid[y][x]], op)
-// 		}
-// 	}
-// }
+func (s *Scene) Draw(screen *ebiten.Image) {
+	for y := 0; y < MaxSize; y++ {
+		for x := 0; x < MaxSize; x++ {
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(float64(x*TileSize), float64(y*TileSize))
+			screen.DrawImage(s.Images[s.Grid[y][x]], op)
+		}
+	}
+}

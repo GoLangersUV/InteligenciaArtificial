@@ -3,14 +3,14 @@ package game
 import (
 	"github.com/Krud3/InteligenciaArtificial/src/utils"
 
+	"github.com/Krud3/InteligenciaArtificial/src/game/entities"
 	"github.com/hajimehoshi/ebiten/v2"
-	// Import the entities package
 )
 
 type Game struct {
 	scene     *Scene
-	car       *Car
-	passenger *Passenger // Optional if the passenger needs independent logic
+	car       *entities.Car
+	passenger *entities.Passenger // Optional if the passenger needs independent logic
 }
 
 func NewGame() (*Game, error) {
@@ -26,10 +26,10 @@ func NewGame() (*Game, error) {
 	carPath := [][]int{
 		// Sample path or generate it using a search algorithm
 	}
-	car := NewCar(scene.CarPosX, scene.CarPosY, carPath)
+	car := entities.NewCar(scene.CarPosX, scene.CarPosY, carPath)
 
 	// Optionally create a passenger if it has independent logic
-	passenger := NewPassenger(scene.PassengerPosX, scene.PassengerPosY)
+	passenger := entities.NewPassenger(scene.PassengerPosX, scene.PassengerPosY)
 
 	return &Game{
 		scene:     scene,
@@ -56,20 +56,21 @@ func (g *Game) Update() error {
 	return nil
 }
 
-func (s *Scene) Draw(screen *ebiten.Image) {
-	// Draw the grid
-	for y := 0; y < MaxSize; y++ {
-		for x := 0; x < MaxSize; x++ {
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(float64(x*TileSize), float64(y*TileSize))
-			screen.DrawImage(s.Images[s.Grid[y][x]], op)
-		}
-	}
+func (g *Game) Draw(screen *ebiten.Image) {
+	// Draw the scene first
+	g.scene.Draw(screen)
 
-	// Draw the car at its current position
+	// Draw the car on top of the scene
 	carOp := &ebiten.DrawImageOptions{}
-	carOp.GeoM.Translate(float64(s.Car.PosX*TileSize), float64(s.Car.PosY*TileSize))
-	screen.DrawImage(s.Images[Car], carOp)
+	carOp.GeoM.Translate(float64(g.car.PosX*TileSize), float64(g.car.PosY*TileSize))
+	screen.DrawImage(g.scene.Images[Car], carOp)
+
+	// Optionally draw the passenger if it's still present
+	if g.passenger != nil {
+		passengerOp := &ebiten.DrawImageOptions{}
+		passengerOp.GeoM.Translate(float64(g.passenger.PosX*TileSize), float64(g.passenger.PosY*TileSize))
+		screen.DrawImage(g.scene.Images[Passenger], passengerOp)
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
