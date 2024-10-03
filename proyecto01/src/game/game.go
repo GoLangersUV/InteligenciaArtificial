@@ -37,14 +37,41 @@ func NewGame() (*Game, error) {
 
 	// Create the car
 	carPath := [][]int{
-		// Sample path or generate it
+		{2, 0},
+		{3, 0},
+		{4, 0},
+		{5, 0},
+		{6, 0},
+		{5, 0},
+		{4, 0},
+		{3, 0},
+		{3, 1},
+		{3, 2},
+		{3, 3},
+		{2, 3},
+		{1, 3},
+		{1, 4},
+		{1, 5},
+		{2, 5},
+		{3, 5},
+		{3, 6},
+		{3, 7},
+		{2, 7},
+		{1, 7},
+		{1, 8},
+		{1, 9},
+		{2, 9},
+		{3, 9},
+		{4, 9},
+		{5, 9},
 	}
 	car := &entities.Car{
 		PosX:  scene.CarPosX,
 		PosY:  scene.CarPosY,
 		Path:  carPath,
 		Index: 0,
-		Image: carImage, // Assign the car image
+		Image: carImage,
+		Delay: 30,
 	}
 
 	// Create the passenger
@@ -63,7 +90,7 @@ func NewGame() (*Game, error) {
 
 func (g *Game) Update() error {
 	// Move the car along its path
-	g.car.Move()
+	g.car.Update()
 
 	// Check if the car reaches the passenger
 	if g.car.PosX == g.scene.PassengerPosX && g.car.PosY == g.scene.PassengerPosY {
