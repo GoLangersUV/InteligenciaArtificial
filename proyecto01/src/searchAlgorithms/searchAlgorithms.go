@@ -1,45 +1,104 @@
 package searchAlgorithms
 
 import (
-  "time"
+	"time"
+
+	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
 )
 
 // enviroment represents the enviroment where the agent is going to move
 type enviroment struct {
-  matrix [][]int
-  totalGoal int
+	agent     agent
+	board     [][]int
+	totalGoal int
+}
+
+// A point in the game board
+type BoardCoordinate struct {
+	x, y int
 }
 
 // SearchAlgorithm is the interface that the search algorithms must implement
 type SearchAgorithm interface {
-  LookForGoal(*enviroment) (solutionFound bool, expandenNodes, treeDepth, cost float32, timeExe time.Duration) 
+	LookForGoal(*enviroment) (solutionFound bool, expandenNodes, treeDepth, cost float32, timeExe time.Duration)
 }
 
 // agent represents the agent that is going to move in the enviroment
 type agent struct {
-  x, y int
-  searchAlgorithm SearchAgorithm
-  ambientPerception [4]int
+	position          BoardCoordinate
+	searchAlgorithm   SearchAgorithm
+	ambientPerception [4]int
 }
-
 
 // MoveUp, MoveRight, MoveDown y MoveLeft son los actuadores del agente
 func (a *agent) MoveUp() {
-  a.x--
+	a.position.x--
 }
 func (a *agent) MoveRight() {
-  a.y++
+	a.position.y++
 }
 func (a *agent) MoveDown() {
-  a.x++
+	a.position.x++
 }
 func (a *agent) MoveLeft() {
-  a.y--
+	a.position.y--
+}
+
+var contiguousMovements = [4]BoardCoordinate{BoardCoordinate{0, -1}, BoardCoordinate{1, 0}, BoardCoordinate{0, 1}, BoardCoordinate{-1, 0}}
+
+func coordinateAdd(firstCoordinate BoardCoordinate, secondCoordinates BoardCoordinate) BoardCoordinate {
+	return BoardCoordinate{firstCoordinate.x + secondCoordinates.x, firstCoordinate.y + secondCoordinates.y}
+}
+
+func Percept(a agent, board [][]int) []BoardCoordinate {
+	canMove := []BoardCoordinate{}
+	for _, contiguous := range contiguousMovements {
+		tryCoordinate := coordinateAdd(a.position, contiguous)
+		if board[tryCoordinate.x][tryCoordinate.y] == 0 {
+			canMove = append(canMove, tryCoordinate)
+		}
+	}
+	return canMove
 }
 
 type AmplitudeSearch struct {
 }
 
-func (a *AmplitudeSearch) LookForGoal(e *enviroment) (solutionFound bool, expandenNodes, treeDepth, cost float32, timeExe time.Duration) {
-  return
+type SearchResult struct {
+	solutionFound            bool
+	expandenNodes, treeDepth int
+	cost                     float32
+	timeExe                  time.Duration
+}
+
+func (a *AmplitudeSearch) LookForGoal(e *enviroment) SearchResult {
+	expandenNodes := 0
+	treeDepth := 0
+	initialPosition := e.agent.position
+	queue := datatypes.Queue[BoardCoordinate]{}
+	queue.Enqueue(BoardCoordinate{initialPosition.x, initialPosition.y})
+	start := time.Now()
+	for !queue.IsEmpty() {
+		currentPosition, error := queue.Dequeue()
+		if error {
+			return SearchResult{}
+		}
+		if e.board[currentPosition.x][currentPosition.x] == 6 {
+			end := time.Now()
+			return SearchResult{
+				true,
+				expandenNodes,
+				treeDepth,
+				1.0,
+				end.Sub(start),
+			}
+		}
+		e.agent.position = currentPosition
+		agentPerception := Percept(e.agent, e.board)
+		expandenNodes++
+		for _, perception := range agentPerception {
+			queue.Enqueue(perception)
+		}
+	}
+	return SearchResult{}
 }
