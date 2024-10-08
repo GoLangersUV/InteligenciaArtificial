@@ -61,7 +61,7 @@ func Percept(a agent, board [][]int) []BoardCoordinate {
 	return canMove
 }
 
-type AmplitudeSearch struct {
+type BreadthFirstSearch struct {
 }
 
 type SearchResult struct {
@@ -71,7 +71,7 @@ type SearchResult struct {
 	timeExe                  time.Duration
 }
 
-func (a *AmplitudeSearch) LookForGoal(e *enviroment) SearchResult {
+func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 	expandenNodes := 0
 	treeDepth := 0
 	initialPosition := e.agent.position
