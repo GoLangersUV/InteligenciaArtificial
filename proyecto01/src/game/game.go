@@ -14,7 +14,7 @@ type Game struct {
 	passenger *entities.Passenger // Optional if the passenger needs independent logic
 }
 
-func NewGame() (*Game, error) {
+func NewGame(carPath [][]int) (*Game, error) {
 	matrix, err := utils.GetMatrix() // Load the matrix
 	if err != nil {
 		return nil, err
@@ -35,36 +35,6 @@ func NewGame() (*Game, error) {
 		return nil, err
 	}
 
-	// Create the car
-	carPath := [][]int{
-		{2, 0},
-		{3, 0},
-		{4, 0},
-		{5, 0},
-		{6, 0},
-		{5, 0},
-		{4, 0},
-		{3, 0},
-		{3, 1},
-		{3, 2},
-		{3, 3},
-		{2, 3},
-		{1, 3},
-		{1, 4},
-		{1, 5},
-		{2, 5},
-		{3, 5},
-		{3, 6},
-		{3, 7},
-		{2, 7},
-		{1, 7},
-		{1, 8},
-		{1, 9},
-		{2, 9},
-		{3, 9},
-		{4, 9},
-		{5, 9},
-	}
 	car := &entities.Car{
 		PosX:  scene.CarPosX,
 		PosY:  scene.CarPosY,
