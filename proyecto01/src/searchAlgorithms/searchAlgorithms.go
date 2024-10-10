@@ -107,15 +107,27 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 	return SearchResult{}
 }
 
-func StartGame() {
+func StartGame(strategy int) {
 	board, error := GetMatrix()
 	if error != nil {
 		fmt.Println("Error al cargar el tablero")
 	}
-	searchStrategy := BreadthFirstSearch{}
+	var searchStrategy SearchAgorithm
+
+	switch strategy {
+	case 1:
+		searchStrategy = &BreadthFirstSearch{}
+	case 2:
+		searchStrategy = &BreadthFirstSearch{}
+	case 4:
+		searchStrategy = &BreadthFirstSearch{}
+	default:
+		fmt.Println("Unknown strategy")
+	}
+
 	agent := agent{
 		BoardCoordinate{0, 0},
-		&searchStrategy,
+		searchStrategy,
 		[4]int{},
 	}
 	agent.searchAlgorithm.LookForGoal(&enviroment{agent, board, 0})
