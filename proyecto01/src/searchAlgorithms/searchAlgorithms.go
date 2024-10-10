@@ -61,8 +61,9 @@ func Percept(a agent, board [][]int) []BoardCoordinate {
 	return canMove
 }
 
-type BreadthFirstSearch struct {
-}
+type BreadthFirstSearch struct{}
+
+type DepthSearch struct{}
 
 type SearchResult struct {
 	solutionFound            bool
@@ -107,6 +108,10 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 	return SearchResult{}
 }
 
+func (a *DepthSearch) LookForGoal(e *enviroment) SearchResult {
+	return SearchResult{}
+}
+
 func StartGame(strategy int) {
 	board, error := GetMatrix()
 	if error != nil {
@@ -118,7 +123,7 @@ func StartGame(strategy int) {
 	case 1:
 		searchStrategy = &BreadthFirstSearch{}
 	case 2:
-		searchStrategy = &BreadthFirstSearch{}
+		searchStrategy = &DepthSearch{}
 	case 4:
 		searchStrategy = &BreadthFirstSearch{}
 	default:
@@ -130,5 +135,6 @@ func StartGame(strategy int) {
 		searchStrategy,
 		[4]int{},
 	}
-	agent.searchAlgorithm.LookForGoal(&enviroment{agent, board, 0})
+	result := agent.searchAlgorithm.LookForGoal(&enviroment{agent, board, 0})
+	fmt.Println(result)
 }

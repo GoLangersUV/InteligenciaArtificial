@@ -15,7 +15,7 @@ func main() {
 		// Define flags for command-line arguments
 		// Parse the command-line arguments
 		flag.Parse()
-		searchAlgorithms.StartGame(strategy)
+		searchAlgorithms.StartGame(*strategy)
 	} else {
 		fmt.Println("Enter a valid strategy value")
 	}
