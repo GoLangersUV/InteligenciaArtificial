@@ -2,8 +2,9 @@ package searchAlgorithms
 
 import (
 	"fmt"
-	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
 	"time"
+
+	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
 )
 
 // enviroment represents the enviroment where the agent is going to move
@@ -13,11 +14,6 @@ type enviroment struct {
 	totalGoal int
 }
 
-// A point in the game board
-type BoardCoordinate struct {
-	x, y int
-}
-
 // SearchAlgorithm is the interface that the search algorithms must implement
 type SearchAgorithm interface {
 	LookForGoal(*enviroment) SearchResult
@@ -25,36 +21,36 @@ type SearchAgorithm interface {
 
 // agent represents the agent that is going to move in the enviroment
 type agent struct {
-	position          BoardCoordinate
+	position          datatypes.BoardCoordinate
 	searchAlgorithm   SearchAgorithm
 	ambientPerception [4]int
 }
 
 // MoveUp, MoveRight, MoveDown y MoveLeft son los actuadores del agente
 func (a *agent) MoveUp() {
-	a.position.x--
+	a.position.X--
 }
 func (a *agent) MoveRight() {
-	a.position.y++
+	a.position.Y++
 }
 func (a *agent) MoveDown() {
-	a.position.x++
+	a.position.X++
 }
 func (a *agent) MoveLeft() {
-	a.position.y--
+	a.position.Y--
 }
 
-var contiguousMovements = [4]BoardCoordinate{BoardCoordinate{0, -1}, BoardCoordinate{1, 0}, BoardCoordinate{0, 1}, BoardCoordinate{-1, 0}}
+var contiguousMovements = [4]datatypes.BoardCoordinate{{X: 0, Y: -1}, {X: 1, Y: 0}, {X: 0, Y: 1}, {X: -1, Y: 0}}
 
-func coordinateAdd(firstCoordinate BoardCoordinate, secondCoordinates BoardCoordinate) BoardCoordinate {
-	return BoardCoordinate{firstCoordinate.x + secondCoordinates.x, firstCoordinate.y + secondCoordinates.y}
+func coordinateAdd(firstCoordinate datatypes.BoardCoordinate, secondCoordinates datatypes.BoardCoordinate) datatypes.BoardCoordinate {
+	return datatypes.BoardCoordinate{X: firstCoordinate.X + secondCoordinates.X, Y: firstCoordinate.Y + secondCoordinates.Y}
 }
 
-func Percept(a agent, board [][]int) []BoardCoordinate {
-	canMove := []BoardCoordinate{}
+func Percept(a agent, board [][]int) []datatypes.BoardCoordinate {
+	canMove := []datatypes.BoardCoordinate{}
 	for _, contiguous := range contiguousMovements {
 		tryCoordinate := coordinateAdd(a.position, contiguous)
-		if board[tryCoordinate.x][tryCoordinate.y] == 0 {
+		if board[tryCoordinate.X][tryCoordinate.Y] == 0 {
 			canMove = append(canMove, tryCoordinate)
 		}
 	}
@@ -73,12 +69,12 @@ type SearchResult struct {
 }
 
 func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
-	parentNodes := make(datatypes.Set)
+	parentNodes := make(datatypes.Set) // For Hold the parents node removed from the queue
 	expandenNodes := 0
 	treeDepth := 0
 	initialPosition := e.agent.position
-	queue := datatypes.Queue[BoardCoordinate]{}
-	queue.Enqueue(BoardCoordinate{initialPosition.x, initialPosition.y})
+	queue := datatypes.Queue[datatypes.BoardCoordinate]{}
+	queue.Enqueue(datatypes.BoardCoordinate{X: initialPosition.X, Y: initialPosition.Y})
 	start := time.Now()
 	for !queue.IsEmpty() {
 		currentPosition, error := queue.Dequeue()
@@ -86,7 +82,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 			return SearchResult{}
 		}
 		parentNodes.Add(currentPosition)
-		if e.board[currentPosition.x][currentPosition.x] == 6 {
+		if e.board[currentPosition.X][currentPosition.X] == 6 {
 			end := time.Now()
 			return SearchResult{
 				true,
@@ -113,10 +109,11 @@ func (a *DepthSearch) LookForGoal(e *enviroment) SearchResult {
 }
 
 func StartGame(strategy int) {
-	board, error := GetMatrix()
+	scannedMatrix, error := GetMatrix()
 	if error != nil {
 		fmt.Println("Error al cargar el tablero")
 	}
+
 	var searchStrategy SearchAgorithm
 
 	switch strategy {
@@ -131,10 +128,10 @@ func StartGame(strategy int) {
 	}
 
 	agent := agent{
-		BoardCoordinate{0, 0},
+		datatypes.BoardCoordinate{X: 0, Y: 0},
 		searchStrategy,
 		[4]int{},
 	}
-	result := agent.searchAlgorithm.LookForGoal(&enviroment{agent, board, 0})
+	result := agent.searchAlgorithm.LookForGoal(&enviroment{agent, scannedMatrix.Matrix, 0})
 	fmt.Println(result)
 }
