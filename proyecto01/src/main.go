@@ -7,51 +7,44 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+var g *game.Game
+
 func main() {
 
 	matrixFileName := "Prueba1.txt"
 
-	game, err := game.NewGame(matrixFileName)
+	var err error
+	g, err = game.NewGame(matrixFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	carPath := [][]int{
-		{2, 0},
-		{3, 0},
-		{4, 0},
-		{5, 0},
-		{6, 0},
-		{5, 0},
-		{4, 0},
-		{3, 0},
-		{3, 1},
-		{3, 2},
-		{3, 3},
-		{2, 3},
-		{1, 3},
-		{1, 4},
-		{1, 5},
-		{2, 5},
-		{3, 5},
-		{3, 6},
-		{3, 7},
-		{2, 7},
-		{1, 7},
-		{1, 8},
-		{1, 9},
-		{2, 9},
-		{3, 9},
-		{4, 9},
-		{5, 9},
-	}
-	game.SetCarPath(carPath)
+	g.SetCarPath("callDummy")
 
 	// game.SetScene(matrixFileName)
 
+	// // This will expose the SetPath function to JavaScript
+	// js.Global().Set("setCarPath", js.FuncOf(setCarPath))
+	// // This will expose the SetPath function to JavaScript
+	// js.Global().Set("setCarPath", js.FuncOf(setScene))
+
 	ebiten.SetWindowSize(640, 640)
 	ebiten.SetWindowTitle("Searching Algorithms")
-	if err := ebiten.RunGame(game); err != nil {
+	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
+
+	// select {}
 }
+
+// func setCarPath(this js.Value, p []js.Value) interface{} {
+// 	path := p[0].String()
+// 	g.SetCarPath(path)
+// 	return nil
+// }
+
+// func setScene(this js.Value, p []js.Value) interface{} {
+// 	path := p[0].String()
+// 	g.SetScene(path)
+// 	return nil
+// }
