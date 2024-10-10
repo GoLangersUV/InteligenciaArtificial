@@ -127,11 +127,17 @@ func StartGame(strategy int) {
 		fmt.Println("Unknown strategy")
 	}
 
-	agent := agent{
-		datatypes.BoardCoordinate{X: 0, Y: 0},
-		searchStrategy,
-		[4]int{},
+	initialPosition, exists := scannedMatrix.MainCoordinates["init"]
+	if exists {
+		agent := agent{
+			initialPosition,
+			searchStrategy,
+			[4]int{},
+		}
+		result := agent.searchAlgorithm.LookForGoal(&enviroment{agent, scannedMatrix.Matrix, 0})
+		fmt.Println(result)
+	} else {
+
 	}
-	result := agent.searchAlgorithm.LookForGoal(&enviroment{agent, scannedMatrix.Matrix, 0})
-	fmt.Println(result)
+
 }
