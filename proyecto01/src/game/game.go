@@ -3,6 +3,7 @@ package game
 import (
 	"log"
 
+	"github.com/Krud3/InteligenciaArtificial/src/searchAlgorithms"
 	"github.com/Krud3/InteligenciaArtificial/src/utils"
 
 	"github.com/Krud3/InteligenciaArtificial/src/game/entities"
@@ -102,7 +103,16 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return MaxSize * TileSize, MaxSize * TileSize
 }
 
-func (g *Game) SetCarPath(newPath [][]int) {
+func (g *Game) SetCarPath(algorithmKey string) {
+	var newPath [][]int // Declare newPath outside the conditional block
+
+	switch algorithmKey {
+	case "callDummy":
+		newPath = searchAlgorithms.DummyAlgorithm() // Call the dummy algorithm
+	default:
+		newPath = [][]int{} // Initialize with an empty slice for other cases
+	}
+
 	g.car.Path = newPath // Set the new path
 	if g.car.PosX != g.car.InitialPosX && g.car.PosY != g.car.InitialPosY {
 		g.car.Index = 0                // Reset the index so the car follows the new path from the beginning
