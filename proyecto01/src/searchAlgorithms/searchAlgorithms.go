@@ -1,9 +1,9 @@
 package searchAlgorithms
 
 import (
-	"time"
-
+	"fmt"
 	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
+	"time"
 )
 
 // enviroment represents the enviroment where the agent is going to move
@@ -20,7 +20,7 @@ type BoardCoordinate struct {
 
 // SearchAlgorithm is the interface that the search algorithms must implement
 type SearchAgorithm interface {
-	LookForGoal(*enviroment) (solutionFound bool, expandenNodes, treeDepth, cost float32, timeExe time.Duration)
+	LookForGoal(*enviroment) SearchResult
 }
 
 // agent represents the agent that is going to move in the enviroment
@@ -72,6 +72,7 @@ type SearchResult struct {
 }
 
 func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
+	parentNodes := make(datatypes.Set)
 	expandenNodes := 0
 	treeDepth := 0
 	initialPosition := e.agent.position
@@ -83,6 +84,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 		if error {
 			return SearchResult{}
 		}
+		parentNodes.Add(currentPosition)
 		if e.board[currentPosition.x][currentPosition.x] == 6 {
 			end := time.Now()
 			return SearchResult{
@@ -97,8 +99,24 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 		agentPerception := Percept(e.agent, e.board)
 		expandenNodes++
 		for _, perception := range agentPerception {
-			queue.Enqueue(perception)
+			if !parentNodes.Contains(perception) {
+				queue.Enqueue(perception)
+			}
 		}
 	}
 	return SearchResult{}
+}
+
+func StartGame() {
+	board, error := GetMatrix()
+	if error != nil {
+		fmt.Println("Error al cargar el tablero")
+	}
+	searchStrategy := BreadthFirstSearch{}
+	agent := agent{
+		BoardCoordinate{0, 0},
+		&searchStrategy,
+		[4]int{},
+	}
+	agent.searchAlgorithm.LookForGoal(&enviroment{agent, board, 0})
 }
