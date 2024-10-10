@@ -8,6 +8,14 @@ import (
 )
 
 func main() {
+
+	matrixFileName := "Prueba1.txt"
+
+	game, err := game.NewGame(matrixFileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	carPath := [][]int{
 		{2, 0},
 		{3, 0},
@@ -37,12 +45,12 @@ func main() {
 		{4, 9},
 		{5, 9},
 	}
-	game, err := game.NewGame(carPath)
-	if err != nil {
-		log.Fatal(err)
-	}
+	game.SetCarPath(carPath)
+
+	// game.SetScene(matrixFileName)
+
 	ebiten.SetWindowSize(640, 640)
-	ebiten.SetWindowTitle("Your Game Title")
+	ebiten.SetWindowTitle("Searching Algorithms")
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}

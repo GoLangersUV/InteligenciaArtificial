@@ -8,9 +8,9 @@ import (
 	"strings"
 )
 
-func GetMatrix() ([][]int, error) {
+func GetMatrix(fileName string) ([][]int, error) {
 	// Open the file
-	file, err := os.Open("../battery/Prueba1.txt")
+	file, err := os.Open("../battery/" + fileName)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return nil, err

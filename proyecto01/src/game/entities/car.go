@@ -3,12 +3,13 @@ package entities
 import "github.com/hajimehoshi/ebiten/v2"
 
 type Car struct {
-	PosX, PosY int
-	Path       [][]int
-	Index      int
-	Image      *ebiten.Image
-	frameCount int
-	Delay      int
+	PosX, PosY               int
+	InitialPosX, InitialPosY int
+	Path                     [][]int
+	Index                    int
+	Image                    *ebiten.Image
+	frameCount               int
+	Delay                    int
 }
 
 // func NewCar(startX, startY int, path [][]int) *Car {
