@@ -22,6 +22,7 @@ type SearchAgorithm interface {
 // agent represents the agent that is going to move in the enviroment
 type agent struct {
 	position          datatypes.BoardCoordinate
+	passenger         bool
 	searchAlgorithm   SearchAgorithm
 	ambientPerception [4]int
 }
@@ -50,10 +51,15 @@ func Percept(a agent, board [][]int) []datatypes.BoardCoordinate {
 	canMove := []datatypes.BoardCoordinate{}
 	for _, contiguous := range contiguousMovements {
 		tryCoordinate := coordinateAdd(a.position, contiguous)
-		if board[tryCoordinate.X][tryCoordinate.Y] == 0 {
+		if tryCoordinate.X >= 0 &&
+			tryCoordinate.Y >= 0 &&
+			tryCoordinate.X < len(board) &&
+			tryCoordinate.Y < len(board) &&
+			board[tryCoordinate.X][tryCoordinate.Y] != 1 {
 			canMove = append(canMove, tryCoordinate)
 		}
 	}
+	fmt.Println("Can move: %s", canMove)
 	return canMove
 }
 
@@ -77,12 +83,30 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 	queue.Enqueue(datatypes.BoardCoordinate{X: initialPosition.X, Y: initialPosition.Y})
 	start := time.Now()
 	for !queue.IsEmpty() {
-		currentPosition, error := queue.Dequeue()
-		if error {
-			return SearchResult{}
+		currentPosition, empty := queue.Dequeue()
+		if empty {
+			return SearchResult{
+				false,
+				expandenNodes,
+				treeDepth,
+				0.0,
+				time.Now().Sub(start),
+			}
 		}
 		parentNodes.Add(currentPosition)
-		if e.board[currentPosition.X][currentPosition.X] == 6 {
+		fmt.Printf("current: %s", currentPosition)
+
+		if e.board[currentPosition.X][currentPosition.Y] == 5 {
+			e.agent = agent{
+				initialPosition,
+				true,
+				e.agent.searchAlgorithm,
+				e.agent.ambientPerception,
+			}
+			parentNodes = make(datatypes.Set)
+		}
+
+		if e.agent.passenger && e.board[currentPosition.X][currentPosition.Y] == 6 {
 			end := time.Now()
 			return SearchResult{
 				true,
@@ -92,6 +116,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 				end.Sub(start),
 			}
 		}
+		fmt.Println("Position: %s", currentPosition)
 		e.agent.position = currentPosition
 		agentPerception := Percept(e.agent, e.board)
 		expandenNodes++
@@ -101,6 +126,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 			}
 		}
 	}
+	fmt.Println("No solution found")
 	return SearchResult{}
 }
 
@@ -131,6 +157,7 @@ func StartGame(strategy int) {
 	if exists {
 		agent := agent{
 			initialPosition,
+			false,
 			searchStrategy,
 			[4]int{},
 		}

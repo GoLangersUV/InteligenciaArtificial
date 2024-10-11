@@ -11,11 +11,11 @@ func (q *Queue[T]) Enqueue(v T) {
 func (q *Queue[T]) Dequeue() (T, bool) {
 	if len(q.elements) == 0 {
 		var zero T
-		return zero, false
+		return zero, true
 	}
 	v := q.elements[0]
 	q.elements = q.elements[1:]
-	return v, true
+	return v, false
 }
 
 func (q *Queue[T]) Len() int {
