@@ -62,3 +62,11 @@ func NewCar(x, y int) *Car {
 		Delay:       30,
 	}
 }
+
+func (c *Car) SetImageWithPassenger() {
+	carImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/moto-1-narvaez-girl.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	c.Image = carImage
+}

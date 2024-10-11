@@ -16,7 +16,7 @@ type Passenger struct {
 func NewPassenger(x, y int) *Passenger {
 
 	// Load the passenger image
-	passengerImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/moto-2-narvaez.png")
+	passengerImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/girl.png")
 	if err != nil {
 		log.Fatal(err)
 	}

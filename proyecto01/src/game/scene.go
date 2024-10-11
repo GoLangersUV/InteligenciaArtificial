@@ -47,7 +47,7 @@ func NewScene(matrix [][]int) *Scene {
 		Car:           "./game/assets/images/moto-1-narvaez.png",
 		MediumTraffic: "./game/assets/images/trafico-medio.png",
 		HighTraffic:   "./game/assets/images/trafico-pesado.png",
-		Passenger:     "./game/assets/images/moto-2-narvaez.png",
+		Passenger:     "./game/assets/images/girl.png",
 		Goal:          "./game/assets/images/destino.png",
 	}
 
