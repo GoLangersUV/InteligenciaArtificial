@@ -27,6 +27,7 @@ type Game struct {
 	passenger         *entities.Passenger // Optional if the passenger needs independent logic
 	selectedFileIndex int
 	files             []string
+	frameCount        int
 }
 
 const (
@@ -80,6 +81,24 @@ func (g *Game) Update() error {
 		if g.car.PosX == g.scene.GoalPosX && g.car.PosY == g.scene.GoalPosY {
 			// Handle reaching the goal (e.g., end the game or display success)
 		}
+
+		// Handle the mouse click for the "Back to Menu" button
+		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+			x, y := ebiten.CursorPosition()
+			backButtonWidth := 150
+			backButtonHeight := 40
+			screenWidth, _ := ebiten.WindowSize()
+
+			// Coordinates for the back button
+			backButtonX := screenWidth - backButtonWidth - 10
+			backButtonY := 10
+
+			// Check if the mouse click is within the button's area
+			if x >= backButtonX && x <= backButtonX+backButtonWidth && y >= backButtonY && y <= backButtonY+backButtonHeight {
+				g.state = MenuState // Go back to the menu state
+				print("Going back to the menu...")
+			}
+		}
 	}
 	return nil
 }
@@ -104,6 +123,21 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			passengerOp.GeoM.Translate(float64(g.passenger.PosX*TileSize), float64(g.passenger.PosY*TileSize))
 			screen.DrawImage(g.scene.Images[Passenger], passengerOp)
 		}
+
+		// Render the "Back to Menu" button in the upper-right corner
+		backButtonWidth := 150
+		backButtonHeight := 40
+		screenWidth, _ := ebiten.WindowSize()
+
+		// Coordinates for the back button
+		backButtonX := screenWidth - backButtonWidth - 10
+		backButtonY := 10
+
+		// Draw the button (a rectangle)
+		ebitenutil.DrawRect(screen, float64(backButtonX), float64(backButtonY), float64(backButtonWidth), float64(backButtonHeight), color.RGBA{255, 0, 0, 255})
+
+		// Add text to the button
+		ebitenutil.DebugPrintAt(screen, "Back to Menu", backButtonX+20, backButtonY+10)
 	case EndState:
 		// Draw the end screen
 	}
@@ -153,35 +187,66 @@ func (g *Game) SetScene(fileName string) {
 
 func (g *Game) DrawMenu(screen *ebiten.Image) {
 	// Dibujar el botón de inicio
-	startButtonRect := image.Rect(100, 100, 300, 150)
+	startButtonRect := image.Rect(((MaxSize*TileSize)/2 - 100), 100, ((MaxSize*TileSize)/2 + 100), 150)
 	ebitenutil.DrawRect(screen, float64(startButtonRect.Min.X), float64(startButtonRect.Min.Y), float64(startButtonRect.Dx()), float64(startButtonRect.Dy()), color.RGBA{0, 255, 0, 255})
-	ebitenutil.DebugPrintAt(screen, "Start Game", 130, 120)
+	ebitenutil.DebugPrintAt(screen, "Start Game", ((MaxSize*TileSize)/2-100)+40, 120)
 
 	// Dibujar el botón para subir la matriz
-	uploadButtonRect := image.Rect(100, 200, 300, 250)
+	uploadButtonRect := image.Rect(((MaxSize*TileSize)/2 - 100), 200, ((MaxSize*TileSize)/2 + 100), 250)
 	ebitenutil.DrawRect(screen, float64(uploadButtonRect.Min.X), float64(uploadButtonRect.Min.Y), float64(uploadButtonRect.Dx()), float64(uploadButtonRect.Dy()), color.RGBA{0, 0, 255, 255})
-	ebitenutil.DebugPrintAt(screen, "Upload Matrix", 130, 220)
+	ebitenutil.DebugPrintAt(screen, "Upload Matrix", ((MaxSize*TileSize)/2-100)+40, 220)
 
+	g.DrawFiles(screen)
+}
+
+func (g *Game) DrawFiles(screen *ebiten.Image) {
 	// Dibujar los archivos disponibles en la carpeta 'battery'
-	y := 200
+	y := ((MaxSize * TileSize) / 4 * 2)
 	for i, file := range g.files {
 		text := file
 		if g.selectedFileIndex == i {
 			text = "> " + file // Añadir un indicador para mostrar el archivo seleccionado
 		}
-		ebitenutil.DebugPrintAt(screen, text, 100, y)
+		ebitenutil.DebugPrintAt(screen, text, ((MaxSize*TileSize)/2 - 100), y)
 		y += 20
 	}
 }
 
+func (g *Game) DrawEndScreen(screen *ebiten.Image) {
+
+}
+
 func (g *Game) UpdateMenu() {
-	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
-		if g.selectedFileIndex < len(g.files)-1 {
-			g.selectedFileIndex++
+	// Increment the frame counter
+	const keyPressDelay = 8
+	// Increment the frame counter
+	g.frameCount++
+
+	// Check if enough frames have passed before reacting to key presses
+	if g.frameCount >= keyPressDelay {
+		// Reset frame counter
+		g.frameCount = 0
+
+		// Navigate down the file list
+		if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
+			if g.selectedFileIndex < len(g.files)-1 {
+				g.selectedFileIndex++
+			}
 		}
-	} else if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
-		if g.selectedFileIndex > 0 {
-			g.selectedFileIndex--
+
+		// Navigate up the file list
+		if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
+			if g.selectedFileIndex > 0 {
+				g.selectedFileIndex--
+			}
+		}
+
+		// Confirm the file selection with Enter
+		if ebiten.IsKeyPressed(ebiten.KeyEnter) && g.selectedFileIndex >= 0 {
+			selectedFile := g.files[g.selectedFileIndex]
+			g.SetScene("../battery/" + selectedFile) // Load the new scene with the selected file
+			g.state = PlayingState                   // Change the state to playing
+			g.SetCarPath("callDummy")                // Set the car's path
 		}
 	}
 
@@ -196,17 +261,36 @@ func (g *Game) UpdateMenu() {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
 
+		// Check if any file was clicked
+		fileStartY := ((MaxSize * TileSize) / 4 * 2) // Starting Y position of the first file in the list
+		fileHeight := 20                             // Height of each file item
+		for i, file := range g.files {
+			fileY := fileStartY + i*fileHeight
+			if x >= ((MaxSize*TileSize)/2-100) && x <= ((MaxSize*TileSize)/2+100) && y >= fileY && y <= fileY+fileHeight {
+				g.selectedFileIndex = i // Set the selected file based on the click
+				print("File selected:", file)
+
+				// // Optionally, load the file immediately upon clicking
+				// selectedFile := g.files[g.selectedFileIndex]
+				// g.SetScene("../battery/" + selectedFile) // Load the new scene with the selected file
+				// g.state = PlayingState                   // Change the state to playing
+				// g.SetCarPath("callDummy")                // Set the car's path
+			}
+		}
+
 		// Verificar si se presionó el botón "Start Game"
-		if x >= 100 && x <= 300 && y >= 100 && y <= 150 {
+		if x >= ((MaxSize*TileSize)/2-100) && x <= ((MaxSize*TileSize)/2+100) && y >= 100 && y <= 150 {
 			if g.selectedFileIndex >= 0 {
 				selectedFile := g.files[g.selectedFileIndex]
 				g.SetScene("../battery/" + selectedFile)
 				g.state = PlayingState
 				g.SetCarPath("callDummy")
+				print("Start Game")
 			}
 		}
+
 		// Verificar si se presionó el botón "Upload Matrix"
-		if x >= 100 && x <= 300 && y >= 200 && y <= 250 {
+		if x >= ((MaxSize*TileSize)/2-100) && x <= ((MaxSize*TileSize)/2+100) && y >= 200 && y <= 250 {
 			g.UploadMatrix() // Llamar al método para subir la matriz
 		}
 	}
@@ -249,6 +333,7 @@ func (g *Game) UploadMatrix() {
 
 	// Establecer la nueva escena utilizando el archivo copiado
 	g.SetScene(targetPath)
+	g.files = g.ListMatrixFiles()
 }
 
 // copyFile copia un archivo de origen a un destino
