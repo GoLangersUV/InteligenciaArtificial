@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,10 +21,12 @@ import (
 type GameState int
 
 type Game struct {
-	state     GameState
-	scene     *Scene
-	car       *entities.Car
-	passenger *entities.Passenger // Optional if the passenger needs independent logic
+	state             GameState
+	scene             *Scene
+	car               *entities.Car
+	passenger         *entities.Passenger // Optional if the passenger needs independent logic
+	selectedFileIndex int
+	files             []string
 }
 
 const (
@@ -45,12 +48,17 @@ func NewGame(matrixFileName string) (*Game, error) {
 
 	passenger := entities.NewPassenger(scene.PassengerPosX, scene.PassengerPosY) // Create the passenger
 
-	return &Game{
-		state:     MenuState,
-		scene:     scene,
-		car:       car,
-		passenger: passenger,
-	}, nil
+	game := &Game{
+		state:             MenuState,
+		scene:             scene,
+		car:               car,
+		passenger:         passenger,
+		selectedFileIndex: -1,
+	}
+
+	game.files = game.ListMatrixFiles() // List the files in the 'battery' folder
+
+	return game, nil
 }
 
 func (g *Game) Update() error {
@@ -154,19 +162,49 @@ func (g *Game) DrawMenu(screen *ebiten.Image) {
 	ebitenutil.DrawRect(screen, float64(uploadButtonRect.Min.X), float64(uploadButtonRect.Min.Y), float64(uploadButtonRect.Dx()), float64(uploadButtonRect.Dy()), color.RGBA{0, 0, 255, 255})
 	ebitenutil.DebugPrintAt(screen, "Upload Matrix", 130, 220)
 
-	// Aquí también podrías agregar otros elementos, como selección de algoritmo, etc.
+	// Dibujar los archivos disponibles en la carpeta 'battery'
+	y := 200
+	for i, file := range g.files {
+		text := file
+		if g.selectedFileIndex == i {
+			text = "> " + file // Añadir un indicador para mostrar el archivo seleccionado
+		}
+		ebitenutil.DebugPrintAt(screen, text, 100, y)
+		y += 20
+	}
 }
 
 func (g *Game) UpdateMenu() {
+	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
+		if g.selectedFileIndex < len(g.files)-1 {
+			g.selectedFileIndex++
+		}
+	} else if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
+		if g.selectedFileIndex > 0 {
+			g.selectedFileIndex--
+		}
+	}
+
+	// Confirmar la selección del archivo con Enter
+	if ebiten.IsKeyPressed(ebiten.KeyEnter) && g.selectedFileIndex >= 0 {
+		selectedFile := g.files[g.selectedFileIndex]
+		g.SetScene("../battery/" + selectedFile) // Cargar la nueva escena con el archivo seleccionado
+		g.state = PlayingState                   // Cambiar el estado al de juego
+		g.SetCarPath("callDummy")                // Establecer la ruta del coche)
+	}
+
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
 
 		// Verificar si se presionó el botón "Start Game"
 		if x >= 100 && x <= 300 && y >= 100 && y <= 150 {
-			g.state = PlayingState
-			g.SetCarPath("callDummy")
+			if g.selectedFileIndex >= 0 {
+				selectedFile := g.files[g.selectedFileIndex]
+				g.SetScene("../battery/" + selectedFile)
+				g.state = PlayingState
+				g.SetCarPath("callDummy")
+			}
 		}
-
 		// Verificar si se presionó el botón "Upload Matrix"
 		if x >= 100 && x <= 300 && y >= 200 && y <= 250 {
 			g.UploadMatrix() // Llamar al método para subir la matriz
@@ -233,4 +271,21 @@ func copyFile(src, dst string) error {
 	}
 
 	return nil
+}
+
+func (g *Game) ListMatrixFiles() []string {
+	batteryDir := "../battery"
+	files, err := ioutil.ReadDir(batteryDir)
+	if err != nil {
+		log.Fatalf("Error reading battery directory: %v", err)
+	}
+
+	var fileNames []string
+	for _, file := range files {
+		if !file.IsDir() {
+			fileNames = append(fileNames, file.Name())
+		}
+	}
+
+	return fileNames
 }
