@@ -5,8 +5,8 @@ type PriorityQueue[T any] struct {
 }
 
 type Element[T any] struct {
-	value    T
-	priority int
+	Value    T
+	Priority int
 }
 
 func NewPriorityQueue[T any]() *PriorityQueue[T] {
@@ -24,19 +24,19 @@ func (pq *PriorityQueue[T]) Pop() (T, bool) {
 		return zero, false
 	}
 	if len(pq.elements) == 1 {
-		return pq.elements[0].value, true
+		return pq.elements[0].Value, true
 	}
 	root := pq.elements[0]
 	pq.elements[0] = pq.elements[len(pq.elements)-1]
 	pq.elements = pq.elements[:len(pq.elements)-1]
 	pq.heapifyDown(0)
-	return root.value, true
+	return root.Value, true
 }
 
 func (pq *PriorityQueue[T]) heapifyUp(index int) {
 	for index > 0 {
 		parentIndex := (index - 1) / 2
-		if pq.elements[parentIndex].priority >= pq.elements[index].priority {
+		if pq.elements[parentIndex].Priority >= pq.elements[index].Priority {
 			break
 		}
 		pq.elements[parentIndex], pq.elements[index] = pq.elements[index], pq.elements[parentIndex]
@@ -49,10 +49,10 @@ func (pq *PriorityQueue[T]) heapifyDown(index int) {
 		leftChildIndex := 2*index + 1
 		rightChildIndex := 2*index + 2
 		largest := index
-		if leftChildIndex < len(pq.elements) && pq.elements[leftChildIndex].priority > pq.elements[largest].priority {
+		if leftChildIndex < len(pq.elements) && pq.elements[leftChildIndex].Priority > pq.elements[largest].Priority {
 			largest = leftChildIndex
 		}
-		if rightChildIndex < len(pq.elements) && pq.elements[rightChildIndex].priority > pq.elements[largest].priority {
+		if rightChildIndex < len(pq.elements) && pq.elements[rightChildIndex].Priority > pq.elements[largest].Priority {
 			largest = rightChildIndex
 		}
 		if largest == index {
@@ -61,4 +61,8 @@ func (pq *PriorityQueue[T]) heapifyDown(index int) {
 		pq.elements[largest], pq.elements[index] = pq.elements[index], pq.elements[largest]
 		index = largest
 	}
+}
+
+func (pq *PriorityQueue[T]) IsEmpty() bool {
+	return len(pq.elements) == 0
 }

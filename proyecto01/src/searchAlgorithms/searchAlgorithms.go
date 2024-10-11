@@ -65,6 +65,8 @@ func Percept(a agent, board [][]int) []datatypes.BoardCoordinate {
 
 type BreadthFirstSearch struct{}
 
+type UniformCostSearch struct{}
+
 type DepthSearch struct{}
 
 type SearchResult struct {
@@ -130,6 +132,46 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 	return SearchResult{}
 }
 
+func (a *UniformCostSearch) LookForGoal(e *enviroment) SearchResult {
+	parentNodes := make(datatypes.Set) // For Hold the parents node removed from the queue
+	expandenNodes := 0
+	treeDepth := 0
+	initialPosition := e.agent.position
+	priorityQueue := datatypes.PriorityQueue[datatypes.BoardCoordinate]{}
+	priorityQueue.Push(datatypes.Element[datatypes.BoardCoordinate]{
+		Value:    initialPosition,
+		Priority: 1},
+	)
+	for !priorityQueue.IsEmpty() {
+		currentPosition, empty := priorityQueue.Pop()
+		if empty {
+			return SearchResult{
+				false,
+				expandenNodes,
+				treeDepth,
+				0.0,
+				0,
+			}
+		}
+		parentNodes.Add(currentPosition)
+		e.agent.position = currentPosition
+		agentPerception := Percept(e.agent, e.board)
+		expandenNodes++
+		for _, perception := range agentPerception {
+			if !parentNodes.Contains(perception) {
+				priorityQueue.Push(
+					datatypes.Element[datatypes.BoardCoordinate]{
+						Value:    perception,
+						Priority: 2,
+					},
+				)
+			}
+		}
+		return SearchResult{}
+	}
+	return SearchResult{}
+}
+
 func (a *DepthSearch) LookForGoal(e *enviroment) SearchResult {
 	return SearchResult{}
 }
@@ -137,7 +179,7 @@ func (a *DepthSearch) LookForGoal(e *enviroment) SearchResult {
 func StartGame(strategy int) {
 	scannedMatrix, error := GetMatrix()
 	if error != nil {
-		fmt.Println("Error al cargar el tablero")
+		fmt.Println("Error to load the matrix")
 	}
 
 	var searchStrategy SearchAgorithm
@@ -146,7 +188,7 @@ func StartGame(strategy int) {
 	case 1:
 		searchStrategy = &BreadthFirstSearch{}
 	case 2:
-		searchStrategy = &DepthSearch{}
+		searchStrategy = &UniformCostSearch{}
 	case 4:
 		searchStrategy = &BreadthFirstSearch{}
 	default:
