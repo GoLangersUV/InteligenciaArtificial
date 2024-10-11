@@ -1,6 +1,8 @@
 package game
 
 import (
+	"image"
+	"image/color"
 	"log"
 
 	"github.com/Krud3/InteligenciaArtificial/src/searchAlgorithms"
@@ -9,13 +11,23 @@ import (
 	"github.com/Krud3/InteligenciaArtificial/src/game/entities"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/ncruces/zenity"
 )
 
+type GameState int
+
 type Game struct {
+	state     GameState
 	scene     *Scene
 	car       *entities.Car
 	passenger *entities.Passenger // Optional if the passenger needs independent logic
 }
+
+const (
+	MenuState GameState = iota
+	PlayingState
+	EndState
+)
 
 func NewGame(matrixFileName string) (*Game, error) {
 	matrix, err := utils.GetMatrix(matrixFileName) // Load the matrix
@@ -58,6 +70,7 @@ func NewGame(matrixFileName string) (*Game, error) {
 	}
 
 	return &Game{
+		state:     MenuState,
 		scene:     scene,
 		car:       car,
 		passenger: passenger,
@@ -65,37 +78,50 @@ func NewGame(matrixFileName string) (*Game, error) {
 }
 
 func (g *Game) Update() error {
-	// Move the car along its path
-	g.car.Update()
 
-	// Check if the car reaches the passenger
-	if g.car.PosX == g.scene.PassengerPosX && g.car.PosY == g.scene.PassengerPosY {
-		// Remove the passenger or handle pickup logic
-		g.passenger = nil // Passenger disappears after being picked up
+	switch g.state {
+	case MenuState:
+		g.UpdateMenu()
+	case PlayingState:
+		// Move the car along its path
+		g.car.Update()
+
+		// Check if the car reaches the passenger
+		if g.car.PosX == g.scene.PassengerPosX && g.car.PosY == g.scene.PassengerPosY {
+			// Remove the passenger or handle pickup logic
+			g.passenger = nil // Passenger disappears after being picked up
+		}
+
+		// Check if the car reaches the goal
+		if g.car.PosX == g.scene.GoalPosX && g.car.PosY == g.scene.GoalPosY {
+			// Handle reaching the goal (e.g., end the game or display success)
+		}
 	}
-
-	// Check if the car reaches the goal
-	if g.car.PosX == g.scene.GoalPosX && g.car.PosY == g.scene.GoalPosY {
-		// Handle reaching the goal (e.g., end the game or display success)
-	}
-
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	// Draw the scene first
-	g.scene.Draw(screen)
+	switch g.state {
+	case MenuState:
+		g.DrawMenu(screen)
+	case PlayingState:
+		// Draw the game
+		// Draw the scene first
+		g.scene.Draw(screen)
 
-	// Draw the car on top of the scene
-	carOp := &ebiten.DrawImageOptions{}
-	carOp.GeoM.Translate(float64(g.car.PosX*TileSize), float64(g.car.PosY*TileSize))
-	screen.DrawImage(g.scene.Images[Car], carOp)
+		// Draw the car on top of the scene
+		carOp := &ebiten.DrawImageOptions{}
+		carOp.GeoM.Translate(float64(g.car.PosX*TileSize), float64(g.car.PosY*TileSize))
+		screen.DrawImage(g.scene.Images[Car], carOp)
 
-	// Optionally draw the passenger if it's still present
-	if g.passenger != nil {
-		passengerOp := &ebiten.DrawImageOptions{}
-		passengerOp.GeoM.Translate(float64(g.passenger.PosX*TileSize), float64(g.passenger.PosY*TileSize))
-		screen.DrawImage(g.scene.Images[Passenger], passengerOp)
+		// Optionally draw the passenger if it's still present
+		if g.passenger != nil {
+			passengerOp := &ebiten.DrawImageOptions{}
+			passengerOp.GeoM.Translate(float64(g.passenger.PosX*TileSize), float64(g.passenger.PosY*TileSize))
+			screen.DrawImage(g.scene.Images[Passenger], passengerOp)
+		}
+	case EndState:
+		// Draw the end screen
 	}
 }
 
@@ -177,4 +203,38 @@ func (g *Game) SetScene(fileName string) {
 		PosY:  g.scene.PassengerPosY,
 		Image: passengerImage, // Assign the passenger image
 	}
+}
+
+func (g *Game) DrawMenu(screen *ebiten.Image) {
+	// Draw the start button
+	startButtonRect := image.Rect(100, 100, 300, 150)
+	ebitenutil.DrawRect(screen, float64(startButtonRect.Min.X), float64(startButtonRect.Min.Y), float64(startButtonRect.Dx()), float64(startButtonRect.Dy()), color.RGBA{0, 255, 0, 255})
+
+	// Add text to the button
+	ebitenutil.DebugPrintAt(screen, "Start Game", 130, 120)
+
+	// Add algorithm selection (as simple buttons or a dropdown)
+	// Example: Draw buttons for different algorithms
+	ebitenutil.DebugPrintAt(screen, "Algorithm: Dummy", 100, 200)
+	// ... Add more options
+}
+
+func (g *Game) UpdateMenu() {
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		x, y := ebiten.CursorPosition()
+		// Check if the start button was clicked
+		if x >= 100 && x <= 300 && y >= 100 && y <= 150 {
+			g.state = PlayingState
+			g.SetCarPath("callDummy")
+		}
+	}
+}
+
+func (g *Game) UploadMatrix() {
+	fileName, err := zenity.SelectFile()
+	if err != nil {
+		log.Println("No file selected or error:", err)
+		return
+	}
+	g.SetScene(fileName) // Set new scene from the selected file
 }
