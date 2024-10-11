@@ -19,32 +19,12 @@ type SearchAgorithm interface {
 	LookForGoal(*enviroment) SearchResult
 }
 
-// The position of the agent among the previous position
-type AgentStep struct {
-	currentPosition   datatypes.BoardCoordinate
-	prreviousPosition datatypes.BoardCoordinate
-}
-
 // agent represents the agent that is going to move in the enviroment
 type agent struct {
-	position          datatypes.BoardCoordinate
+	position          datatypes.AgentStep
 	passenger         bool
 	searchAlgorithm   SearchAgorithm
 	ambientPerception [4]int
-}
-
-// MoveUp, MoveRight, MoveDown y MoveLeft son los actuadores del agente
-func (a *agent) MoveUp() {
-	a.position.X--
-}
-func (a *agent) MoveRight() {
-	a.position.Y++
-}
-func (a *agent) MoveDown() {
-	a.position.X++
-}
-func (a *agent) MoveLeft() {
-	a.position.Y--
 }
 
 var contiguousMovements = [4]datatypes.BoardCoordinate{{X: 0, Y: -1}, {X: 1, Y: 0}, {X: 0, Y: 1}, {X: -1, Y: 0}}
@@ -86,12 +66,15 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 	parentNodes := make(datatypes.Set) // For Hold the parents node removed from the queue
 	expandenNodes := 0
 	treeDepth := 0
-	initialPosition := e.agent.position
-	queue := datatypes.Queue[datatypes.BoardCoordinate]{}
-	queue.Enqueue(datatypes.BoardCoordinate{X: initialPosition.X, Y: initialPosition.Y})
+	initialPosition := datatypes.AgentStep{
+		PreviousPosition: datatypes.BoardCoordinate{},
+		CurrentPosition:  e.agent.position.CurrentPosition,
+	}
+	queue := datatypes.Queue[datatypes.AgentStep]{}
+	queue.Enqueue(initialPosition)
 	start := time.Now()
 	for !queue.IsEmpty() {
-		currentPosition, empty := queue.Dequeue()
+		currentStep, empty := queue.Dequeue()
 		if empty {
 			return SearchResult{
 				false,
@@ -101,10 +84,10 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 				time.Now().Sub(start),
 			}
 		}
-		parentNodes.Add(currentPosition)
-		fmt.Printf("current: %s", currentPosition)
+		parentNodes.Add(currentStep)
+		fmt.Printf("current: %s", currentStep)
 
-		if e.board[currentPosition.X][currentPosition.Y] == 5 {
+		if e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 5 {
 			e.agent = agent{
 				initialPosition,
 				true,
@@ -114,7 +97,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 			parentNodes = make(datatypes.Set)
 		}
 
-		if e.agent.passenger && e.board[currentPosition.X][currentPosition.Y] == 6 {
+		if e.agent.passenger && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 6 {
 			end := time.Now()
 			return SearchResult{
 				true,
@@ -124,13 +107,18 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 				end.Sub(start),
 			}
 		}
-		fmt.Println("Position: %s", currentPosition)
-		e.agent.position = currentPosition
+		fmt.Println("Position: %s", currentStep)
+		e.agent.position = currentStep
 		agentPerception := Percept(e.agent, e.board)
 		expandenNodes++
 		for _, perception := range agentPerception {
 			if !parentNodes.Contains(perception) {
-				queue.Enqueue(perception)
+				queue.Enqueue(
+					datatypes.AgentStep{
+						CurrentPosition:  perception,
+						PreviousPosition: currentStep.CurrentPosition,
+					},
+				)
 			}
 		}
 	}
