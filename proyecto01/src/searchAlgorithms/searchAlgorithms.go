@@ -2,9 +2,9 @@ package searchAlgorithms
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
+	"math"
+	"time"
 )
 
 // enviroment represents the enviroment where the agent is going to move
@@ -36,7 +36,7 @@ func coordinateAdd(firstCoordinate datatypes.BoardCoordinate, secondCoordinates 
 func Percept(a agent, board [][]int) []datatypes.BoardCoordinate {
 	canMove := []datatypes.BoardCoordinate{}
 	for _, contiguous := range contiguousMovements {
-		tryCoordinate := coordinateAdd(a.position, contiguous)
+		tryCoordinate := coordinateAdd(a.position.CurrentPosition, contiguous)
 		if tryCoordinate.X >= 0 &&
 			tryCoordinate.Y >= 0 &&
 			tryCoordinate.X < len(board) &&
@@ -56,6 +56,7 @@ type UniformCostSearch struct{}
 type DepthSearch struct{}
 
 type SearchResult struct {
+	pathFound                []datatypes.BoardCoordinate
 	solutionFound            bool
 	expandenNodes, treeDepth int
 	cost                     float32
@@ -77,6 +78,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 		currentStep, empty := queue.Dequeue()
 		if empty {
 			return SearchResult{
+				[]datatypes.BoardCoordinate{},
 				false,
 				expandenNodes,
 				treeDepth,
@@ -99,7 +101,26 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 
 		if e.agent.passenger && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 6 {
 			end := time.Now()
+			traveledPath := []datatypes.BoardCoordinate{}
+			traveledStep := currentStep.CurrentPosition
+			traveledPath = append(traveledPath, traveledStep) //
+
+			for !parentNodes.IsEmpty() && traveledStep.X != math.MaxInt && traveledStep.Y != math.MaxInt { //
+				//
+				element := parentNodes.GetAndRemove(traveledStep) //
+				if element != nil {                               //
+					if field, ok := element.(datatypes.AgentStep); ok { //
+						traveledStep = field.PreviousPosition             //
+						traveledPath = append(traveledPath, traveledStep) //
+						fmt.Println("element is of type AgentStep Added") //
+					} else { //
+						fmt.Println("element is not of type AgentStep") //
+					} //
+				} //
+			} //																								  //
+
 			return SearchResult{
+				traveledPath,
 				true,
 				expandenNodes,
 				treeDepth,
@@ -131,15 +152,16 @@ func (a *UniformCostSearch) LookForGoal(e *enviroment) SearchResult {
 	expandenNodes := 0
 	treeDepth := 0
 	initialPosition := e.agent.position
-	priorityQueue := datatypes.PriorityQueue[datatypes.BoardCoordinate]{}
-	priorityQueue.Push(datatypes.Element[datatypes.BoardCoordinate]{
+	priorityQueue := datatypes.PriorityQueue[datatypes.AgentStep]{}
+	priorityQueue.Push(datatypes.Element[datatypes.AgentStep]{
 		Value:    initialPosition,
 		Priority: 1},
 	)
 	for !priorityQueue.IsEmpty() {
-		currentPosition, empty := priorityQueue.Pop()
+		currentStep, empty := priorityQueue.Pop()
 		if empty {
 			return SearchResult{
+				[]datatypes.BoardCoordinate{},
 				false,
 				expandenNodes,
 				treeDepth,
@@ -147,15 +169,15 @@ func (a *UniformCostSearch) LookForGoal(e *enviroment) SearchResult {
 				0,
 			}
 		}
-		parentNodes.Add(currentPosition)
-		e.agent.position = currentPosition
+		parentNodes.Add(currentStep)
+		e.agent.position = currentStep
 		agentPerception := Percept(e.agent, e.board)
 		expandenNodes++
 		for _, perception := range agentPerception {
 			if !parentNodes.Contains(perception) {
 				priorityQueue.Push(
-					datatypes.Element[datatypes.BoardCoordinate]{
-						Value:    perception,
+					datatypes.Element[datatypes.AgentStep]{
+						Value:    datatypes.AgentStep{CurrentPosition: perception, PreviousPosition: currentStep.CurrentPosition},
 						Priority: 2,
 					},
 				)
@@ -191,8 +213,15 @@ func StartGame(strategy int) {
 
 	initialPosition, exists := scannedMatrix.MainCoordinates["init"]
 	if exists {
+		initialStep := datatypes.AgentStep{
+			CurrentPosition: initialPosition,
+			PreviousPosition: datatypes.BoardCoordinate{
+				X: math.MaxInt,
+				Y: math.MaxInt,
+			},
+		}
 		agent := agent{
-			initialPosition,
+			initialStep,
 			false,
 			searchStrategy,
 			[4]int{},
