@@ -1,6 +1,11 @@
 package entities
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"log"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+)
 
 type Passenger struct {
 	PosX, PosY               int
@@ -9,8 +14,16 @@ type Passenger struct {
 }
 
 func NewPassenger(x, y int) *Passenger {
+
+	// Load the passenger image
+	passengerImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/moto-2-narvaez.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return &Passenger{
-		PosX: x,
-		PosY: y,
+		PosX:  x,
+		PosY:  y,
+		Image: passengerImage,
 	}
 }

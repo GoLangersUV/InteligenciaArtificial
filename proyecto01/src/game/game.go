@@ -38,36 +38,9 @@ func NewGame(matrixFileName string) (*Game, error) {
 	// Create the scene
 	scene := NewScene(matrix)
 
-	// Load the car image
-	carImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/moto-1-narvaez.png")
-	if err != nil {
-		return nil, err
-	}
+	car := entities.NewCar(scene.CarPosX, scene.CarPosY) // Create the car
 
-	// Load the passenger image
-	passengerImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/moto-2-narvaez.png")
-	if err != nil {
-		return nil, err
-	}
-
-	carPath := [][]int{}
-	car := &entities.Car{
-		PosX:        scene.CarPosX,
-		PosY:        scene.CarPosY,
-		InitialPosX: scene.CarPosX,
-		InitialPosY: scene.CarPosY,
-		Path:        carPath,
-		Index:       0,
-		Image:       carImage,
-		Delay:       30,
-	}
-
-	// Create the passenger
-	passenger := &entities.Passenger{
-		PosX:  scene.PassengerPosX,
-		PosY:  scene.PassengerPosY,
-		Image: passengerImage, // Assign the passenger image
-	}
+	passenger := entities.NewPassenger(scene.PassengerPosX, scene.PassengerPosY) // Create the passenger
 
 	return &Game{
 		state:     MenuState,
@@ -139,28 +112,15 @@ func (g *Game) SetCarPath(algorithmKey string) {
 		newPath = [][]int{} // Initialize with an empty slice for other cases
 	}
 
-	g.car.Path = newPath // Set the new path
 	if g.car.PosX != g.car.InitialPosX && g.car.PosY != g.car.InitialPosY {
-		g.car.Index = 0                // Reset the index so the car follows the new path from the beginning
-		g.car.PosX = g.car.InitialPosX // Reset the car's position to the initial X
-		g.car.PosY = g.car.InitialPosY // Reset the car's position to the initial Y
+		g.car.Reset() // Reset the car position if it's not at the initial position
 	}
+	g.car.SetPath(newPath)
 
 	// Check if the passenger is nil (i.e., removed)
 	if g.passenger == nil {
-		// Recreate the passenger
-		// Load the passenger image
-		passengerImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/moto-2-narvaez.png")
-		if err != nil {
-			log.Fatal(err) // Handle the error appropriately
-		}
-
 		// Create a new passenger and reset it to the initial position
-		g.passenger = &entities.Passenger{
-			PosX:  g.scene.PassengerPosX,
-			PosY:  g.scene.PassengerPosY,
-			Image: passengerImage, // Assign the passenger image
-		}
+		g.passenger = entities.NewPassenger(g.scene.PassengerPosX, g.scene.PassengerPosY)
 	}
 }
 
@@ -173,36 +133,11 @@ func (g *Game) SetScene(fileName string) {
 	// Create the scene
 	g.scene = NewScene(matrix)
 
-	// Load the car image
-	carImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/moto-1-narvaez.png")
-	if err != nil {
-		log.Fatal(err)
-	}
+	scene := NewScene(matrix)
 
-	// Load the passenger image
-	passengerImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/moto-2-narvaez.png")
-	if err != nil {
-		log.Fatal(err)
-	}
+	g.car = entities.NewCar(scene.CarPosX, scene.CarPosY)
 
-	carPath := [][]int{}
-	g.car = &entities.Car{
-		PosX:        g.scene.CarPosX,
-		PosY:        g.scene.CarPosY,
-		InitialPosX: g.scene.CarPosX,
-		InitialPosY: g.scene.CarPosY,
-		Path:        carPath,
-		Index:       0,
-		Image:       carImage,
-		Delay:       30,
-	}
-
-	// Create the passenger
-	g.passenger = &entities.Passenger{
-		PosX:  g.scene.PassengerPosX,
-		PosY:  g.scene.PassengerPosY,
-		Image: passengerImage, // Assign the passenger image
-	}
+	g.passenger = entities.NewPassenger(scene.PassengerPosX, scene.PassengerPosY)
 }
 
 func (g *Game) DrawMenu(screen *ebiten.Image) {
