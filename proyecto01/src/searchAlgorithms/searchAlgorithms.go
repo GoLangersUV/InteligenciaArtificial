@@ -19,6 +19,12 @@ type SearchAgorithm interface {
 	LookForGoal(*enviroment) SearchResult
 }
 
+// The position of the agent among the previous position
+type AgentStep struct {
+	currentPosition   datatypes.BoardCoordinate
+	prreviousPosition datatypes.BoardCoordinate
+}
+
 // agent represents the agent that is going to move in the enviroment
 type agent struct {
 	position          datatypes.BoardCoordinate
