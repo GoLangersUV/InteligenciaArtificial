@@ -3,7 +3,10 @@ package game
 import (
 	"image"
 	"image/color"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/Krud3/InteligenciaArtificial/src/searchAlgorithms"
 	"github.com/Krud3/InteligenciaArtificial/src/utils"
@@ -141,35 +144,93 @@ func (g *Game) SetScene(fileName string) {
 }
 
 func (g *Game) DrawMenu(screen *ebiten.Image) {
-	// Draw the start button
+	// Dibujar el botón de inicio
 	startButtonRect := image.Rect(100, 100, 300, 150)
 	ebitenutil.DrawRect(screen, float64(startButtonRect.Min.X), float64(startButtonRect.Min.Y), float64(startButtonRect.Dx()), float64(startButtonRect.Dy()), color.RGBA{0, 255, 0, 255})
-
-	// Add text to the button
 	ebitenutil.DebugPrintAt(screen, "Start Game", 130, 120)
 
-	// Add algorithm selection (as simple buttons or a dropdown)
-	// Example: Draw buttons for different algorithms
-	ebitenutil.DebugPrintAt(screen, "Algorithm: Dummy", 100, 200)
-	// ... Add more options
+	// Dibujar el botón para subir la matriz
+	uploadButtonRect := image.Rect(100, 200, 300, 250)
+	ebitenutil.DrawRect(screen, float64(uploadButtonRect.Min.X), float64(uploadButtonRect.Min.Y), float64(uploadButtonRect.Dx()), float64(uploadButtonRect.Dy()), color.RGBA{0, 0, 255, 255})
+	ebitenutil.DebugPrintAt(screen, "Upload Matrix", 130, 220)
+
+	// Aquí también podrías agregar otros elementos, como selección de algoritmo, etc.
 }
 
 func (g *Game) UpdateMenu() {
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
 		x, y := ebiten.CursorPosition()
-		// Check if the start button was clicked
+
+		// Verificar si se presionó el botón "Start Game"
 		if x >= 100 && x <= 300 && y >= 100 && y <= 150 {
 			g.state = PlayingState
 			g.SetCarPath("callDummy")
+		}
+
+		// Verificar si se presionó el botón "Upload Matrix"
+		if x >= 100 && x <= 300 && y >= 200 && y <= 250 {
+			g.UploadMatrix() // Llamar al método para subir la matriz
 		}
 	}
 }
 
 func (g *Game) UploadMatrix() {
-	fileName, err := zenity.SelectFile()
+	fileName, err := zenity.SelectFile(
+		zenity.Title("Select a Matrix File"),
+		zenity.FileFilter{
+			Name:     "Text Files",
+			Patterns: []string{"*.txt"},
+		},
+	)
 	if err != nil {
-		log.Println("No file selected or error:", err)
+		if err == zenity.ErrCanceled {
+			log.Println("No file selected or operation was canceled")
+			return
+		}
+		log.Printf("Error selecting file: %v", err)
 		return
 	}
-	g.SetScene(fileName) // Set new scene from the selected file
+
+	targetDir := "../battery"
+	if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+		err := os.MkdirAll(targetDir, os.ModePerm)
+		if err != nil {
+			log.Fatalf("Error creating battery directory: %v", err)
+		}
+	}
+
+	targetPath := filepath.Join(targetDir, filepath.Base(fileName))
+
+	// Copiar el archivo seleccionado a la carpeta 'battery'
+	err = copyFile(fileName, targetPath)
+	if err != nil {
+		log.Fatalf("Error copying file: %v", err)
+	}
+
+	log.Printf("File copied to %s successfully.", targetPath)
+
+	// Establecer la nueva escena utilizando el archivo copiado
+	g.SetScene(targetPath)
+}
+
+// copyFile copia un archivo de origen a un destino
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	destinationFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destinationFile.Close()
+
+	_, err = io.Copy(destinationFile, sourceFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
