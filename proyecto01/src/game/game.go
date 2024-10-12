@@ -1,12 +1,14 @@
 package game
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/Krud3/InteligenciaArtificial/src/searchAlgorithms"
 	"github.com/Krud3/InteligenciaArtificial/src/utils"
@@ -27,7 +29,7 @@ type Game struct {
 	state                  GameState
 	scene                  *Scene
 	car                    *entities.Car
-	passenger              *entities.Passenger // Optional if the passenger needs independent logic
+	passenger              *entities.Passenger
 	selectedFileIndex      int
 	files                  []string
 	frameCount             int
@@ -35,6 +37,11 @@ type Game struct {
 	algorithmType          AlgorithmType
 	selectedAlgorithmIndex int
 	selectedBox            AreaOfKeyEvents
+	nodesExpanded          int
+	treeDepth              int
+	computationTime        float64
+	solutionCost           float64
+	titleImage             *ebiten.Image
 }
 
 const (
@@ -81,6 +88,11 @@ func NewGame(matrixFileName string) (*Game, error) {
 
 	passenger := entities.NewPassenger(scene.PassengerPosX, scene.PassengerPosY) // Create the passenger
 
+	titleImage, _, err := ebitenutil.NewImageFromFile("./game/assets/images/title.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	game := &Game{
 		state:                  MenuState,
 		scene:                  scene,
@@ -91,6 +103,7 @@ func NewGame(matrixFileName string) (*Game, error) {
 		algorithmType:          InformedAlgorithm,
 		selectedAlgorithmIndex: -1,
 		selectedBox:            LeftBox,
+		titleImage:             titleImage,
 	}
 
 	game.files = game.ListMatrixFiles() // List the files in the 'battery' folder
@@ -109,11 +122,24 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	case PlayingState:
 		g.DrawGame(screen)
 	case EndState:
-		// Draw the end screen
+		g.DrawEndScreen(screen)
 	}
 }
 
 func (g *Game) DrawMenu(screen *ebiten.Image) {
+	// Draw the title image at the top-center of the screen
+	screenWidth, _ := ebiten.WindowSize()
+	titleImageWidth, _ := g.titleImage.Size()
+
+	// Calculate the position to center the title image
+	x := (screenWidth - titleImageWidth) / 2
+	y := 50 // You can adjust this for vertical positioning
+
+	// Draw the title image
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(x), float64(y))
+	screen.DrawImage(g.titleImage, op)
+
 	// Dibujar el botón de inicio
 	startButtonRect := image.Rect(((MaxSize*TileSize)/2 - 300 + horizontalSelectAlPhase), 550+verticalSelectAlPhase, ((MaxSize*TileSize)/2 - 100 + horizontalSelectAlPhase), 650+verticalSelectAlPhase)
 	ebitenutil.DrawRect(screen, float64(startButtonRect.Min.X), float64(startButtonRect.Min.Y), float64(startButtonRect.Dx()), float64(startButtonRect.Dy()), color.RGBA{0, 160, 0, 255})
@@ -209,6 +235,30 @@ func (g *Game) DrawGame(screen *ebiten.Image) {
 	ebitenutil.DrawRect(screen, float64(statsButtonX), float64(statsButtonY), float64(statsButtonWidth), float64(statsButtonHeight), color.RGBA{125, 125, 125, 255})
 	// Add text to the button
 	ebitenutil.DebugPrintAt(screen, "Game Stats", statsButtonX+20, statsButtonY+10)
+}
+
+func (g *Game) DrawEndScreen(screen *ebiten.Image) {
+	ebitenutil.DebugPrintAt(screen, "Algorithm Execution Report", 50, 50)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Nodes Expanded: %d", g.nodesExpanded), 50, 80)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Tree Depth: %d", g.treeDepth), 50, 110)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Computation Time: %.2f seconds", g.computationTime), 50, 140)
+
+	// Only display the solution cost if applicable
+	if g.solutionCost > 0 {
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Solution Cost: %.2f", g.solutionCost), 50, 170)
+	}
+
+	// Add a button to return to the menu
+	backButtonRect := image.Rect(50, 550, 200, 600)
+	ebitenutil.DrawRect(screen, float64(backButtonRect.Min.X), float64(backButtonRect.Min.Y), float64(backButtonRect.Dx()), float64(backButtonRect.Dy()), color.RGBA{0, 160, 0, 255})
+	ebitenutil.DebugPrintAt(screen, "Return to Menu", 70, 570)
+
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		x, y := ebiten.CursorPosition()
+		if x >= 50 && x <= 200 && y >= 550 && y <= 600 {
+			g.state = MenuState // Return to the menu
+		}
+	}
 }
 
 func (g *Game) Update() error {
@@ -324,7 +374,7 @@ func (g *Game) UpdateMenu() {
 		}
 
 		// Verificar si se presionó el botón "Upload Matrix"
-		if x >= (MaxSize*TileSize)/2+90+horizontalUploadPhase && x <= (MaxSize*TileSize)/2+310+horizontalUploadPhase && y <= ((MaxSize*TileSize)/4*2)-20+verticalUploadPhase {
+		if x >= (MaxSize*TileSize)/2+90+horizontalUploadPhase && x <= (MaxSize*TileSize)/2+310+horizontalUploadPhase && y >= ((MaxSize*TileSize)/4*2)-70+verticalUploadPhase && y <= ((MaxSize*TileSize)/4*2)-20+verticalUploadPhase {
 			g.UploadMatrix() // Llamar al método para subir la matriz
 		}
 
@@ -382,7 +432,7 @@ func (g *Game) UpdateGame() {
 		// Check if the mouse click is within the button's area
 		if x >= statsButtonX && x <= statsButtonX+statsButtonWidth && y >= statsButtonY && y <= statsButtonY+statsButtonHeight {
 			// Handle the click for the "Game Stats" button
-			// g.state = EndState
+			g.state = EndState
 			print("Game Stats")
 		}
 	}
@@ -469,13 +519,17 @@ func (g *Game) ListMatrixFiles() []string {
 
 func (g *Game) SetCarPath(algorithmKey string) {
 	var newPath [][]int // Declare newPath outside the conditional block
-
+	startTime := time.Now()
 	switch algorithmKey {
 	case "dummyAlgorithm":
 		newPath = searchAlgorithms.DummyAlgorithm() // Call the dummy algorithm
+		g.nodesExpanded = 1
+		g.treeDepth = 2
+		g.solutionCost = 3
 	default:
 		newPath = [][]int{} // Initialize with an empty slice for other cases
 	}
+	g.computationTime = time.Since(startTime).Seconds()
 
 	if g.car.PosX != g.car.InitialPosX && g.car.PosY != g.car.InitialPosY {
 		g.car.Reset() // Reset the car position if it's not at the initial position
