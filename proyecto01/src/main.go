@@ -1,15 +1,19 @@
 package main
 
 import (
+	"image"
 	"log"
 
 	"github.com/Krud3/InteligenciaArtificial/src/game"
+	"github.com/Krud3/InteligenciaArtificial/src/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 var g *game.Game
 
 func main() {
+
+	icon := utils.LoadIcon("./game/assets/images/cantidad-nodos.png")
 
 	matrixFileName := "Prueba1.txt"
 
@@ -21,30 +25,10 @@ func main() {
 
 	g.SetCarPath("callDummy")
 
-	// game.SetScene(matrixFileName)
-
-	// // This will expose the SetPath function to JavaScript
-	// js.Global().Set("setCarPath", js.FuncOf(setCarPath))
-	// // This will expose the SetPath function to JavaScript
-	// js.Global().Set("setCarPath", js.FuncOf(setScene))
-
 	ebiten.SetWindowSize(640, 640)
-	ebiten.SetWindowTitle("Searching Algorithms")
+	ebiten.SetWindowTitle("DidIA Game")
+	ebiten.SetWindowIcon([]image.Image{icon})
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
-
-	// select {}
 }
-
-// func setCarPath(this js.Value, p []js.Value) interface{} {
-// 	path := p[0].String()
-// 	g.SetCarPath(path)
-// 	return nil
-// }
-
-// func setScene(this js.Value, p []js.Value) interface{} {
-// 	path := p[0].String()
-// 	g.SetScene(path)
-// 	return nil
-// }
