@@ -242,14 +242,14 @@ func (g *Game) UpdateMenu() {
 		// Navigate up the file list
 		if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
 			if g.selectedFileIndex == -1 && len(g.files) > 0 && g.selectedBox == LeftBox {
-				g.selectedFileIndex++
+				g.selectedFileIndex = 1
 			}
 			if g.selectedFileIndex > 0 && g.selectedBox == LeftBox {
 				g.selectedFileIndex--
 			}
 
 			if g.selectedAlgorithmIndex == -1 && len(g.algorithms) > 0 && g.selectedBox == RightBox {
-				g.selectedAlgorithmIndex++
+				g.selectedAlgorithmIndex = 1
 			}
 			if g.selectedAlgorithmIndex > 0 && g.selectedBox == RightBox {
 				g.selectedAlgorithmIndex--
@@ -257,33 +257,25 @@ func (g *Game) UpdateMenu() {
 		}
 
 		if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-			if g.selectedFileIndex == -1 && len(g.files) > 0 && g.selectedBox == LeftBox {
+			if g.selectedFileIndex == -1 && len(g.files) > 0 {
 				g.selectedFileIndex = 0
-			} else {
+			}
+			if g.selectedBox != LeftBox {
 				g.selectedBox = LeftBox
-				g.selectedFileIndex = 0
 			}
 			print("LeftBox")
 
 		}
 
 		if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-			if g.selectedAlgorithmIndex == -1 && len(g.algorithms) > 0 && g.selectedBox == RightBox {
+			if g.selectedAlgorithmIndex == -1 && len(g.algorithms) > 0 {
 				g.selectedAlgorithmIndex = 0
-			} else {
+			}
+			if g.selectedBox != RightBox {
 				g.selectedBox = RightBox
-				g.selectedAlgorithmIndex = 0
 			}
 			print("RightBox")
 
-		}
-
-		// Confirm the file selection with Enter
-		if ebiten.IsKeyPressed(ebiten.KeyEnter) && g.selectedFileIndex >= 0 && g.selectedAlgorithmIndex >= 0 {
-			selectedFile := g.files[g.selectedFileIndex]
-			g.SetScene("../battery/" + selectedFile)             // Load the new scene with the selected file
-			g.state = PlayingState                               // Change the state to playing
-			g.SetCarPath(g.algorithms[g.selectedAlgorithmIndex]) // Set the car's path
 		}
 	}
 
@@ -292,7 +284,7 @@ func (g *Game) UpdateMenu() {
 		selectedFile := g.files[g.selectedFileIndex]
 		g.SetScene("../battery/" + selectedFile) // Cargar la nueva escena con el archivo seleccionado
 		g.state = PlayingState                   // Cambiar el estado al de juego
-		g.SetCarPath("callDummy")                // Establecer la ruta del coche)
+		g.SetCarPath(g.algorithms[g.selectedAlgorithmIndex])
 	}
 
 	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
