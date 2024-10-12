@@ -25,3 +25,8 @@ func (q *Queue[T]) Len() int {
 func (q *Queue[T]) IsEmpty() bool {
 	return len(q.elements) == 0
 }
+
+// Clear method to empty the queue
+func (q *Queue[T]) Clear() {
+	q.elements = []T{} // Reinitialize the slice to an empty slice
+}
