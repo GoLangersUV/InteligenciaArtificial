@@ -4,7 +4,6 @@ import (
 	"image"
 	"image/color"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,20 +19,53 @@ import (
 
 type GameState int
 
+type AlgorithmType int
+
+type AreaOfKeyEvents int
+
 type Game struct {
-	state             GameState
-	scene             *Scene
-	car               *entities.Car
-	passenger         *entities.Passenger // Optional if the passenger needs independent logic
-	selectedFileIndex int
-	files             []string
-	frameCount        int
+	state                  GameState
+	scene                  *Scene
+	car                    *entities.Car
+	passenger              *entities.Passenger // Optional if the passenger needs independent logic
+	selectedFileIndex      int
+	files                  []string
+	frameCount             int
+	algorithms             []string
+	algorithmType          AlgorithmType
+	selectedAlgorithmIndex int
+	selectedBox            AreaOfKeyEvents
 }
 
 const (
 	MenuState GameState = iota
 	PlayingState
 	EndState
+)
+
+const (
+	InformedAlgorithm AlgorithmType = iota
+	UninformedAlgorithm
+)
+
+const (
+	LeftBox AreaOfKeyEvents = iota
+	RightBox
+)
+
+const (
+	verticalUploadPhase   int = 0
+	horizontalUploadPhase int = -375
+)
+
+const (
+	verticalSelectAlPhase   int = 0
+	horizontalSelectAlPhase int = 380
+)
+
+var (
+	uninformedAlgorithms []string = []string{"dummyAlgorithm", "aUninformedAgorithm"}
+	informedAlgorithms   []string = []string{"dummyAlgorithm", "anInformedAgorithm"}
 )
 
 func NewGame(matrixFileName string) (*Game, error) {
@@ -50,11 +82,15 @@ func NewGame(matrixFileName string) (*Game, error) {
 	passenger := entities.NewPassenger(scene.PassengerPosX, scene.PassengerPosY) // Create the passenger
 
 	game := &Game{
-		state:             MenuState,
-		scene:             scene,
-		car:               car,
-		passenger:         passenger,
-		selectedFileIndex: -1,
+		state:                  MenuState,
+		scene:                  scene,
+		car:                    car,
+		passenger:              passenger,
+		selectedFileIndex:      -1,
+		algorithms:             informedAlgorithms,
+		algorithmType:          InformedAlgorithm,
+		selectedAlgorithmIndex: -1,
+		selectedBox:            LeftBox,
 	}
 
 	game.files = game.ListMatrixFiles() // List the files in the 'battery' folder
@@ -79,42 +115,61 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 func (g *Game) DrawMenu(screen *ebiten.Image) {
 	// Dibujar el botón de inicio
-	startButtonRect := image.Rect(((MaxSize*TileSize)/2 - 300), 550, ((MaxSize*TileSize)/2 - 100), 650)
-	ebitenutil.DrawRect(screen, float64(startButtonRect.Min.X), float64(startButtonRect.Min.Y), float64(startButtonRect.Dx()), float64(startButtonRect.Dy()), color.RGBA{0, 150, 0, 255})
-	ebitenutil.DebugPrintAt(screen, "Start Game", ((MaxSize*TileSize)/2-300)+65, 592)
+	startButtonRect := image.Rect(((MaxSize*TileSize)/2 - 300 + horizontalSelectAlPhase), 550+verticalSelectAlPhase, ((MaxSize*TileSize)/2 - 100 + horizontalSelectAlPhase), 650+verticalSelectAlPhase)
+	ebitenutil.DrawRect(screen, float64(startButtonRect.Min.X), float64(startButtonRect.Min.Y), float64(startButtonRect.Dx()), float64(startButtonRect.Dy()), color.RGBA{0, 160, 0, 255})
+	ebitenutil.DrawRect(screen, float64(startButtonRect.Min.X)+5, float64(startButtonRect.Min.Y)+5, float64(startButtonRect.Dx())-10, float64(startButtonRect.Dy())-10, color.RGBA{0, 140, 0, 255})
+	ebitenutil.DebugPrintAt(screen, "Start Game", ((MaxSize*TileSize)/2-300)+65+horizontalSelectAlPhase, 592+verticalSelectAlPhase)
 
 	// Dibujar el botón para subir la matriz
-	verticalPhase := 80
-	uploadButtonRect := image.Rect(((MaxSize*TileSize)/2 + 90), ((MaxSize*TileSize)/4*2)-70+verticalPhase, ((MaxSize*TileSize)/2 + 310), ((MaxSize*TileSize)/4*2)-20+verticalPhase)
-	ebitenutil.DrawRect(screen, float64(uploadButtonRect.Min.X), float64(uploadButtonRect.Min.Y), float64(uploadButtonRect.Dx()), float64(uploadButtonRect.Dy()), color.RGBA{0, 0, 255, 255})
-	ebitenutil.DebugPrintAt(screen, "Upload Matrix", ((MaxSize*TileSize)/2+90)+40, ((MaxSize*TileSize)/4*2)-50+verticalPhase)
-	g.DrawFiles(screen, verticalPhase)
+	uploadButtonRect := image.Rect((MaxSize*TileSize)/2+90+horizontalUploadPhase, (MaxSize*TileSize)/2-70+verticalUploadPhase, (MaxSize*TileSize)/2+310+horizontalUploadPhase, ((MaxSize*TileSize)/4*2)-20+verticalUploadPhase)
+	ebitenutil.DrawRect(screen, float64(uploadButtonRect.Min.X), float64(uploadButtonRect.Min.Y), float64(uploadButtonRect.Dx()), float64(uploadButtonRect.Dy()), color.RGBA{0, 50, 255, 255})
+	ebitenutil.DrawRect(screen, float64(uploadButtonRect.Min.X)+5, float64(uploadButtonRect.Min.Y)+5, float64(uploadButtonRect.Dx())-10, float64(uploadButtonRect.Dy())-10, color.RGBA{0, 35, 240, 255})
+	ebitenutil.DebugPrintAt(screen, "Upload Matrix", ((MaxSize*TileSize)/2+90)+65+horizontalUploadPhase, ((MaxSize*TileSize)/4*2)-52+verticalUploadPhase)
+	g.DrawFiles(screen)
 
-	// Dibujar el botón de inicio
-	informedSearchButtonRect := image.Rect(((MaxSize*TileSize)/2 - 300), 190, ((MaxSize*TileSize)/2 - 100), 240)
+	// Dibujar el botón de búsqueda informada
+	informedSearchButtonRect := image.Rect((MaxSize*TileSize)/2-300+horizontalSelectAlPhase, 250+verticalSelectAlPhase, (MaxSize*TileSize)/2-100+horizontalSelectAlPhase, 300+verticalSelectAlPhase)
 	ebitenutil.DrawRect(screen, float64(informedSearchButtonRect.Min.X), float64(informedSearchButtonRect.Min.Y), float64(informedSearchButtonRect.Dx()), float64(informedSearchButtonRect.Dy()), color.RGBA{235, 130, 0, 255})
-	ebitenutil.DebugPrintAt(screen, "Informed Search", ((MaxSize*TileSize)/2-300)+45, 210)
+	ebitenutil.DrawRect(screen, float64(informedSearchButtonRect.Min.X)+5, float64(informedSearchButtonRect.Min.Y)+5, float64(informedSearchButtonRect.Dx())-10, float64(informedSearchButtonRect.Dy())-10, color.RGBA{220, 115, 0, 255})
+	ebitenutil.DebugPrintAt(screen, "Informed Search", ((MaxSize*TileSize)/2-300)+50+horizontalSelectAlPhase, 267+verticalSelectAlPhase)
 
-	// Dibujar el botón de inicio
-	unInformedSearchButtonRect := image.Rect(((MaxSize*TileSize)/2 - 300), 250, ((MaxSize*TileSize)/2 - 100), 300)
+	// Dibujar el botón de búsqueda no informada
+	unInformedSearchButtonRect := image.Rect(((MaxSize*TileSize)/2 - 300 + horizontalSelectAlPhase), 300+verticalSelectAlPhase, ((MaxSize*TileSize)/2 - 100 + horizontalSelectAlPhase), 350+verticalSelectAlPhase)
 	ebitenutil.DrawRect(screen, float64(unInformedSearchButtonRect.Min.X), float64(unInformedSearchButtonRect.Min.Y), float64(unInformedSearchButtonRect.Dx()), float64(unInformedSearchButtonRect.Dy()), color.RGBA{235, 130, 0, 255})
-	ebitenutil.DebugPrintAt(screen, "Uninformed Search", ((MaxSize*TileSize)/2-300)+45, 270)
+	ebitenutil.DrawRect(screen, float64(unInformedSearchButtonRect.Min.X)+5, float64(unInformedSearchButtonRect.Min.Y)+5, float64(unInformedSearchButtonRect.Dx())-10, float64(unInformedSearchButtonRect.Dy())-10, color.RGBA{220, 115, 0, 255})
+	ebitenutil.DebugPrintAt(screen, "Uninformed Search", ((MaxSize*TileSize)/2-300)+45+horizontalSelectAlPhase, 317+verticalSelectAlPhase)
+
+	g.DrawAlgorithms(screen)
 }
 
-func (g *Game) DrawFiles(screen *ebiten.Image, verticalPhase int) {
+func (g *Game) DrawFiles(screen *ebiten.Image) {
 	// Dibujar los archivos disponibles en la carpeta 'battery'
-	y := ((MaxSize * TileSize) / 4 * 2) + verticalPhase
-	ebitenutil.DrawRect(screen, float64((MaxSize*TileSize)/2+100)-10, float64(y-20), 220, 20, color.RGBA{100, 100, 100, 255})
+	y := ((MaxSize * TileSize) / 2) + verticalUploadPhase
+	ebitenutil.DrawRect(screen, float64((MaxSize*TileSize)/2+100-10+horizontalUploadPhase), float64(y-20), 220, 20, color.RGBA{100, 100, 100, 255})
 	for i, file := range g.files {
 		text := file
 		if g.selectedFileIndex == i {
 			text = "> " + file // Añadir un indicador para mostrar el archivo seleccionado
 		}
-		ebitenutil.DrawRect(screen, float64((MaxSize*TileSize)/2+100)-10, float64(y), 220, 20, color.RGBA{100, 100, 100, 255})
-		ebitenutil.DebugPrintAt(screen, text, ((MaxSize*TileSize)/2 + 100), y)
+		ebitenutil.DrawRect(screen, float64((MaxSize*TileSize)/2+100-10+horizontalUploadPhase), float64(y), 220, 20, color.RGBA{100, 100, 100, 255})
+		ebitenutil.DebugPrintAt(screen, text, ((MaxSize*TileSize)/2 + 100 + horizontalUploadPhase), y)
 		y += 20
 	}
-	ebitenutil.DrawRect(screen, float64((MaxSize*TileSize)/2+100)-10, float64(y), 220, 20, color.RGBA{100, 100, 100, 255})
+	ebitenutil.DrawRect(screen, float64((MaxSize*TileSize)/2+100-10+horizontalUploadPhase), float64(y), 220, 20, color.RGBA{100, 100, 100, 255})
+}
+
+func (g *Game) DrawAlgorithms(screen *ebiten.Image) {
+	// Dibujar los archivos disponibles en la carpeta 'battery'
+	y := 350 + verticalSelectAlPhase + 20
+	ebitenutil.DrawRect(screen, float64((MaxSize*TileSize)/2-300+horizontalSelectAlPhase), float64(y-20), 200, 20*6, color.RGBA{100, 100, 100, 255})
+	for i, algorithm := range g.algorithms {
+		text := algorithm
+		if g.selectedAlgorithmIndex == i {
+			text = "> " + algorithm // Añadir un indicador para mostrar el archivo seleccionado
+		}
+		ebitenutil.DebugPrintAt(screen, text, ((MaxSize*TileSize)/2 - 300 + 10 + horizontalSelectAlPhase), y)
+		y += 20
+	}
 }
 
 func (g *Game) DrawGame(screen *ebiten.Image) {
@@ -176,24 +231,59 @@ func (g *Game) UpdateMenu() {
 
 		// Navigate down the file list
 		if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
-			if g.selectedFileIndex < len(g.files)-1 {
+			if g.selectedFileIndex < len(g.files)-1 && g.selectedBox == LeftBox {
 				g.selectedFileIndex++
+			}
+			if g.selectedAlgorithmIndex < len(g.algorithms)-1 && g.selectedBox == RightBox {
+				g.selectedAlgorithmIndex++
 			}
 		}
 
 		// Navigate up the file list
 		if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
-			if g.selectedFileIndex > 0 {
+			if g.selectedFileIndex == -1 && len(g.files) > 0 && g.selectedBox == LeftBox {
+				g.selectedFileIndex++
+			}
+			if g.selectedFileIndex > 0 && g.selectedBox == LeftBox {
 				g.selectedFileIndex--
+			}
+
+			if g.selectedAlgorithmIndex == -1 && len(g.algorithms) > 0 && g.selectedBox == RightBox {
+				g.selectedAlgorithmIndex++
+			}
+			if g.selectedAlgorithmIndex > 0 && g.selectedBox == RightBox {
+				g.selectedAlgorithmIndex--
 			}
 		}
 
+		if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+			if g.selectedFileIndex == -1 && len(g.files) > 0 && g.selectedBox == LeftBox {
+				g.selectedFileIndex = 0
+			} else {
+				g.selectedBox = LeftBox
+				g.selectedFileIndex = 0
+			}
+			print("LeftBox")
+
+		}
+
+		if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+			if g.selectedAlgorithmIndex == -1 && len(g.algorithms) > 0 && g.selectedBox == RightBox {
+				g.selectedAlgorithmIndex = 0
+			} else {
+				g.selectedBox = RightBox
+				g.selectedAlgorithmIndex = 0
+			}
+			print("RightBox")
+
+		}
+
 		// Confirm the file selection with Enter
-		if ebiten.IsKeyPressed(ebiten.KeyEnter) && g.selectedFileIndex >= 0 {
+		if ebiten.IsKeyPressed(ebiten.KeyEnter) && g.selectedFileIndex >= 0 && g.selectedAlgorithmIndex >= 0 {
 			selectedFile := g.files[g.selectedFileIndex]
-			g.SetScene("../battery/" + selectedFile) // Load the new scene with the selected file
-			g.state = PlayingState                   // Change the state to playing
-			g.SetCarPath("callDummy")                // Set the car's path
+			g.SetScene("../battery/" + selectedFile)             // Load the new scene with the selected file
+			g.state = PlayingState                               // Change the state to playing
+			g.SetCarPath(g.algorithms[g.selectedAlgorithmIndex]) // Set the car's path
 		}
 	}
 
@@ -209,30 +299,51 @@ func (g *Game) UpdateMenu() {
 		x, y := ebiten.CursorPosition()
 
 		// Check if any file was clicked
-		fileStartY := ((MaxSize * TileSize) / 4 * 2) // Starting Y position of the first file in the list
-		fileHeight := 20                             // Height of each file item
+		fileStartY := ((MaxSize * TileSize) / 4 * 2) + verticalUploadPhase // Starting Y position of the first file in the list
+		fileHeight := 20                                                   // Height of each file item
 		for i, file := range g.files {
 			fileY := fileStartY + i*fileHeight
-			if x >= ((MaxSize*TileSize)/2-100) && x <= ((MaxSize*TileSize)/2+100) && y >= fileY && y <= fileY+fileHeight {
+			if x >= (MaxSize*TileSize)/2+100+horizontalUploadPhase && x <= (MaxSize*TileSize)/2+300+horizontalUploadPhase && y >= fileY && y <= fileY+fileHeight {
 				g.selectedFileIndex = i // Set the selected file based on the click
 				print("File selected:", file)
 			}
 		}
 
+		// Check if any algorithm was clicked
+		algorithmStartY := 350 + verticalSelectAlPhase + 20 // Starting Y position of the first file in the list
+		algorithmHeight := 20                               // Height of each file item
+		for i, algorithm := range g.algorithms {
+			algorithmY := algorithmStartY + i*algorithmHeight
+			if x >= ((MaxSize*TileSize)/2-300+10+horizontalSelectAlPhase) && x <= ((MaxSize*TileSize)/2-100+10+horizontalSelectAlPhase) && y >= algorithmY && y <= algorithmY+algorithmHeight {
+				g.selectedAlgorithmIndex = i // Set the selected file based on the click
+				print("File selected:", algorithm)
+			}
+		}
+
 		// Verificar si se presionó el botón "Start Game"
-		if x >= ((MaxSize*TileSize)/2-100) && x <= ((MaxSize*TileSize)/2+100) && y >= 100 && y <= 150 {
+		if x >= ((MaxSize*TileSize)/2-300+horizontalSelectAlPhase) && x <= ((MaxSize*TileSize)/2-100+horizontalSelectAlPhase) && y >= 550+verticalSelectAlPhase && y <= 650+verticalSelectAlPhase {
 			if g.selectedFileIndex >= 0 {
 				selectedFile := g.files[g.selectedFileIndex]
 				g.SetScene("../battery/" + selectedFile)
 				g.state = PlayingState
-				g.SetCarPath("callDummy")
+				g.SetCarPath(g.algorithms[g.selectedAlgorithmIndex])
 				print("Start Game")
 			}
 		}
 
 		// Verificar si se presionó el botón "Upload Matrix"
-		if x >= ((MaxSize*TileSize)/2-100) && x <= ((MaxSize*TileSize)/2+100) && y >= 200 && y <= 250 {
+		if x >= (MaxSize*TileSize)/2+90+horizontalUploadPhase && x <= (MaxSize*TileSize)/2+310+horizontalUploadPhase && y <= ((MaxSize*TileSize)/4*2)-20+verticalUploadPhase {
 			g.UploadMatrix() // Llamar al método para subir la matriz
+		}
+
+		// Verificar si se presionó el botón "Informed Search"
+		if x >= (MaxSize*TileSize)/2-300+horizontalSelectAlPhase && x <= (MaxSize*TileSize)/2-100+horizontalSelectAlPhase && y >= 250+verticalSelectAlPhase && y <= 300+verticalSelectAlPhase {
+			g.algorithms = informedAlgorithms
+		}
+
+		// Verificar si se presionó el botón "Unnformed Search"
+		if x >= (MaxSize*TileSize)/2-300+horizontalSelectAlPhase && x <= (MaxSize*TileSize)/2-100+horizontalSelectAlPhase && y >= 300+verticalSelectAlPhase && y <= 350+verticalSelectAlPhase {
+			g.algorithms = uninformedAlgorithms
 		}
 	}
 }
@@ -349,7 +460,7 @@ func copyFile(src, dst string) error {
 
 func (g *Game) ListMatrixFiles() []string {
 	batteryDir := "../battery"
-	files, err := ioutil.ReadDir(batteryDir)
+	files, err := os.ReadDir(batteryDir)
 	if err != nil {
 		log.Fatalf("Error reading battery directory: %v", err)
 	}
@@ -368,7 +479,7 @@ func (g *Game) SetCarPath(algorithmKey string) {
 	var newPath [][]int // Declare newPath outside the conditional block
 
 	switch algorithmKey {
-	case "callDummy":
+	case "dummyAlgorithm":
 		newPath = searchAlgorithms.DummyAlgorithm() // Call the dummy algorithm
 	default:
 		newPath = [][]int{} // Initialize with an empty slice for other cases
