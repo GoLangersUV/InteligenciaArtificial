@@ -155,11 +155,10 @@ func getSuccessors(node *Node, env *Environment, useGCost bool) []*Node {
           Depth:                node.Depth + 1,
           HasPickedUpPassenger: hasPickedUpPassenger,
         }
-
         newNode.H = heuristic(newNode, env)
+        newNode.G = node.G + cost
 
         if useGCost {
-          newNode.G = node.G + cost
           newNode.F = newNode.G + newNode.H
         }
 
@@ -171,15 +170,16 @@ func getSuccessors(node *Node, env *Environment, useGCost bool) []*Node {
   return successors
 }
 
+
 func getCellCost(cellValue int) float32 {
-    switch cellValue {
+  switch cellValue {
     case 0: // Tráfico liviano
-        return 1
+    return 1
     case MIDCOST: // Tráfico medio
-        return 4
+    return 4
     case HEAVYCOST: // Tráfico pesado
-        return 7
-    default:
-        return 1 // Default cost for other types
-    }
+    return 7
+  default:
+    return 1 // Default cost for other types
+  }
 }

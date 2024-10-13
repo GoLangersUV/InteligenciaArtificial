@@ -20,6 +20,7 @@ func (m *MiserSearch) LookForGoal(env *Environment) SearchResult {
 
   startNode := &Node{
     Position:             env.InitPosition,
+    G:                    0,
     H:                    heuristic(&Node{Position: env.InitPosition}, env),
     Depth:                0,
     HasPickedUpPassenger: false,
@@ -39,13 +40,14 @@ func (m *MiserSearch) LookForGoal(env *Environment) SearchResult {
 
     if currentNode.Position == env.GoalPosition && currentNode.HasPickedUpPassenger {
       totalPath := reconstructPathI(currentNode)
+      totalCost := currentNode.G
       timeExecuted := time.Since(startTime)
 
       return SearchResult{
         SolutionFound: true,
         ExpandedNodes: expandedNodes,
         TreeDepth:     maxDepth,
-        Cost:          -1, // No calculamos el costo real en búsqueda ávara
+        Cost:          totalCost,
         TimeExecuted:  timeExecuted,
         Path:          totalPath,
       }
@@ -54,6 +56,9 @@ func (m *MiserSearch) LookForGoal(env *Environment) SearchResult {
     state := State{
       Position:             currentNode.Position,
       HasPickedUpPassenger: currentNode.HasPickedUpPassenger,
+    }
+    if closedList[state] {
+      continue
     }
     closedList[state] = true
 
