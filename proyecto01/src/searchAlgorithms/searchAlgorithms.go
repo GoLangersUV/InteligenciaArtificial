@@ -227,9 +227,9 @@ func reconstructPath(parentNodes []datatypes.AgentStep, endStep datatypes.AgentS
 	return path
 }
 
-func (a *UniformCostSearch) LookForGoal(e *enviroment, passengerPosition datatypes.BoardCoordinate, goalPosition datatypes.BoardCoordinate) datatypes.SearchResult {
+func (a *UniformCostSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 	// Step 1: Find the path to the passenger
-	pathToPassenger := a.findPath(e, e.agent.position, passengerPosition)
+	pathToPassenger := a.findPath(e, 5)
 
 	// If the path to the passenger is not found, return empty result
 	if len(pathToPassenger) == 0 {
@@ -244,7 +244,7 @@ func (a *UniformCostSearch) LookForGoal(e *enviroment, passengerPosition datatyp
 	}
 
 	// Step 2: Find the path from the passenger to the goal
-	pathToGoal := a.findPath(e, passengerPosition, goalPosition)
+	pathToGoal := a.findPath(e, 6)
 
 	// If the path to the goal is not found, return the path to the passenger
 	if len(pathToGoal) == 0 {
@@ -272,24 +272,30 @@ func (a *UniformCostSearch) LookForGoal(e *enviroment, passengerPosition datatyp
 }
 
 // Helper function to perform Uniform Cost Search from start to goal
-func (a *UniformCostSearch) findPath(e *enviroment, start datatypes.BoardCoordinate, goal datatypes.BoardCoordinate) []datatypes.BoardCoordinate {
+func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardCoordinate {
 	parentNodes := make(datatypes.Set) // Holds parent nodes
-	expandenNodes := 0
+	expandenNodes := 0                 // The expanded nodes at any given time
 	priorityQueue := datatypes.PriorityQueue[datatypes.AgentStep]{}
 	priorityQueue.Push(datatypes.Element[datatypes.AgentStep]{
-		Value:    datatypes.AgentStep{CurrentPosition: start},
+
+		Value: datatypes.AgentStep{
+			Depth:            e.agent.Depth,
+			Action:           e.agent.Action,
+			PreviousPosition: e.agent.PreviousPosition,
+			CurrentPosition:  e.agent.CurrentPosition,
+		},
 		Priority: 0}, // Priority can be based on cost from start
 	)
 
 	for !priorityQueue.IsEmpty() {
 		currentStep, empty := priorityQueue.Pop()
 		if empty {
-			return []datatypes.BoardCoordinate{} // No path found
+			return []datatypes.BoardCoordinate{} // No items in the priority queue.
 		}
 
 		// Check if the current position is the goal
-		if currentStep.CurrentPosition == goal {
-			return reconstructPath(currentStep, parentNodes) // Implement this function to trace back the path
+		if e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == goal {
+			return reconstructPath2(currentStep, parentNodes) // Implement this function to trace back the path
 		}
 
 		parentNodes.Add(currentStep.CurrentPosition)
@@ -303,20 +309,22 @@ func (a *UniformCostSearch) findPath(e *enviroment, start datatypes.BoardCoordin
 				priorityQueue.Push(
 					datatypes.Element[datatypes.AgentStep]{
 						Value: datatypes.AgentStep{
+							Depth:            currentStep.Depth + 1,
+							Action:           perception.Action,
 							CurrentPosition:  perception.Coordinate,
 							PreviousPosition: currentStep.CurrentPosition,
 						},
-						Priority: 1, // Set this based on the cost
+						Priority: currentStep.Priority + 1, // Set this based on the cost
 					},
 				)
 			}
 		}
 	}
-	return []datatypes.BoardCoordinate{} // No path found
+	return []datatypes.BoardCoordinate{} // No path found to goal
 }
 
 // Function to reconstruct the path from the goal to the start
-func reconstructPath(currentStep datatypes.AgentStep, parentNodes datatypes.Set) []datatypes.BoardCoordinate {
+func reconstructPath2(currentStep datatypes.AgentStep, parentNodes datatypes.Set) []datatypes.BoardCoordinate {
 	path := []datatypes.BoardCoordinate{}
 	for currentStep.CurrentPosition != (datatypes.BoardCoordinate{}) { // Add your condition for path completion
 		path = append([]datatypes.BoardCoordinate{currentStep.CurrentPosition}, path...)
