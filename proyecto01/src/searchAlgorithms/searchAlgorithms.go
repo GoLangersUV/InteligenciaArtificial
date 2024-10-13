@@ -110,23 +110,21 @@ func Find[T any](slice []T, predicate Predicate[T]) (T, bool) {
 }
 
 func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
-	// For build the complete path at the end.
-	var paths [][]datatypes.AgentStep
-	// Keep the parent nodes saved then these were removed from the queue
-	parentNodes := []datatypes.AgentStep{}
-	// Keep the expanded nodes
+	var parentNodes []datatypes.AgentStep
+	// var paths [][]datatypes.AgentStep // To keep track of both the path to the passenger and from the passenger to the goal
 	expandenNodes := 0
-	// Get the initial position from the pass in environment
+
 	initialPosition := e.agent.position
-	// Data structure that implement the FIFO queue
 	queue := datatypes.Queue[datatypes.AgentStep]{}
 	queue.Enqueue(initialPosition)
 
-	// Start the computation time
 	start := time.Now()
-	// Check if there are more children vto process
-	for !queue.IsEmpty() {
 
+	passengerFound := false                          // Flag to track if the passenger is found
+	pathToPassenger := []datatypes.BoardCoordinate{} // Path from initial position to the passenger
+	pathToGoal := []datatypes.BoardCoordinate{}      // Path from passenger to the goal
+
+	for !queue.IsEmpty() {
 		currentStep, empty := queue.Dequeue()
 		if empty {
 			return SearchResult{
@@ -135,96 +133,57 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 				expandenNodes,
 				0,
 				0,
-				time.Now().Sub(start),
+				time.Since(start),
 			}
 		}
-		parentNodes = append(parentNodes, currentStep)
-		fmt.Println("***************************************************")
-		fmt.Println("")
-		fmt.Printf("current: \n", currentStep)
-		fmt.Println("")
-		fmt.Println("***************************************************")
-		fmt.Println("")
-		time.Sleep(1000 * time.Millisecond)
 
-		if e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 5 {
+		parentNodes = append(parentNodes, currentStep)
+
+		// Phase 1: Find the passenger
+		if !passengerFound && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 5 {
 			e.passengerPosition = datatypes.BoardCoordinate{
 				X: currentStep.CurrentPosition.X,
 				Y: currentStep.CurrentPosition.Y,
 			}
-			e.agent = agent{
-				initialPosition,
-				true,
-				e.agent.searchAlgorithm,
-				e.agent.ambientPerception,
-			}
-			paths = append(paths, parentNodes)
-			parentNodes = append(parentNodes, datatypes.AgentStep{
-				Action:          currentStep.Action,
-				Depth:           currentStep.Depth + 1,
-				CurrentPosition: currentStep.CurrentPosition,
-				PreviousPosition: datatypes.BoardCoordinate{
-					X: math.MaxInt,
-					Y: math.MaxInt,
-				},
-			})
-			// queue.Clear()
-			// queue.Enqueue(datatypes.AgentStep{
-			// 	Action:          datatypes.UP,
-			// 	Depth:           0,
-			// 	CurrentPosition: currentStep.CurrentPosition,
-			// 	PreviousPosition: datatypes.BoardCoordinate{
-			// 		X: math.MaxInt,
-			// 		Y: math.MaxInt,
-			// 	},
-			// })
+			e.agent.passenger = true // Mark the agent as having picked up the passenger
+			passengerFound = true    // Mark that the passenger has been found
+
+			// Reconstruct path from the initial position to the passenger
+			pathToPassenger = reconstructPath(parentNodes, currentStep)
+
+			// Clear the queue and start BFS again from the passenger's position
+			queue.Clear()
+			parentNodes = nil          // Clear parent nodes for the next phase
+			queue.Enqueue(currentStep) // Start from the passenger's position
+			continue
 		}
 
-		if e.agent.passenger && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 6 {
+		// Phase 2: Search for the goal (once the passenger is found)
+		if passengerFound && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 6 {
 			end := time.Now()
-			traveledPath := []datatypes.BoardCoordinate{}
-			traveledStep := currentStep
 
-			// Start backtracking from the goal to the initial position
-			for traveledStep.CurrentPosition != e.agent.position.CurrentPosition {
-				// Store the current position in the path
-				traveledPath = append([]datatypes.BoardCoordinate{traveledStep.CurrentPosition}, traveledPath...)
+			// Reconstruct path from the passenger to the goal
+			pathToGoal = reconstructPath(parentNodes, currentStep)
 
-				// Find the previous step by matching the PreviousPosition
-				predecessor, found := Find(parentNodes, func(agent datatypes.AgentStep) bool {
-					return agent.CurrentPosition == traveledStep.PreviousPosition
-				})
-
-				if found {
-					traveledStep = predecessor // Move to the previous step
-				} else {
-					break // Exit if no predecessor is found
-				}
-			}
-
-			// Add the initial position to the path
-			traveledPath = append([]datatypes.BoardCoordinate{e.agent.position.CurrentPosition}, traveledPath...)
+			// Combine the two paths: initial -> passenger + passenger -> goal
+			combinedPath := append(pathToPassenger, pathToGoal...)
 
 			return SearchResult{
-				traveledPath,
+				combinedPath,
 				true,
 				expandenNodes,
-				len(traveledPath),
-				1.333,
+				len(combinedPath),
+				1.333, // Example cost, you can modify it as needed
 				end.Sub(start),
 			}
 		}
 
-		fmt.Println("\nPosition: ", currentStep)
+		// Continue exploring neighbors
 		e.agent.position = currentStep
 		agentPerception := Percept(e.agent, e.board)
 		expandenNodes++
 		for _, perception := range agentPerception {
-			fmt.Println("perception ", perception)
-			fmt.Println("Previous step ", currentStep.PreviousPosition)
-			fmt.Println("parentNodes ", parentNodes)
 			if (perception.Coordinate.X != currentStep.PreviousPosition.X) || (perception.Coordinate.Y != currentStep.PreviousPosition.Y) {
-				fmt.Println("entra")
 				queue.Enqueue(
 					datatypes.AgentStep{
 						Action:           perception.Direction,
@@ -235,10 +194,35 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 				)
 			}
 		}
-		fmt.Println("Queu ", queue)
 	}
+
 	fmt.Println("No solution found")
 	return SearchResult{}
+}
+
+// Helper function to reconstruct the path from a given node back to the start
+func reconstructPath(parentNodes []datatypes.AgentStep, endStep datatypes.AgentStep) []datatypes.BoardCoordinate {
+	path := []datatypes.BoardCoordinate{}
+	currentStep := endStep
+
+	// Backtrack using PreviousPosition to build the path
+	for {
+		path = append([]datatypes.BoardCoordinate{currentStep.CurrentPosition}, path...)
+		if currentStep.PreviousPosition.X == math.MaxInt && currentStep.PreviousPosition.Y == math.MaxInt {
+			break // We've reached the starting point
+		}
+		// Find the parent step
+		previousStep, found := Find(parentNodes, func(step datatypes.AgentStep) bool {
+			return step.CurrentPosition == currentStep.PreviousPosition
+		})
+
+		if found {
+			currentStep = previousStep
+		} else {
+			break
+		}
+	}
+	return path
 }
 
 func (a *UniformCostSearch) LookForGoal(e *enviroment) SearchResult {
