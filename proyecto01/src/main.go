@@ -22,9 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	g.SetCarPath("callDummy")
-
 	ebiten.SetWindowSize(640, 640)
 	ebiten.SetWindowTitle("DidIA Game")
 	ebiten.SetWindowIcon([]image.Image{icon})
