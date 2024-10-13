@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
 	"github.com/Krud3/InteligenciaArtificial/src/searchAlgorithms"
 	"github.com/Krud3/InteligenciaArtificial/src/utils"
 
@@ -71,17 +72,17 @@ const (
 )
 
 var (
-	uninformedAlgorithms []string = []string{"dummyAlgorithm", "aUninformedAgorithm"}
 	informedAlgorithms   []string = []string{"dummyAlgorithm", "AStar"}
+	uninformedAlgorithms []string = []string{"Breadth First Algorithm"}
 )
 
-var Matrix = [][]int{}
+var Matrix datatypes.ScannedMatrix
 
 func NewGame(matrixFileName string) (*Game, error) {
-	Matrix, _ = utils.GetMatrix(matrixFileName) // Load the Matrix
+  Matrix, _ = utils.GetMatrix(matrixFileName)
 
 	// Create the scene
-	scene := NewScene(Matrix)
+	scene := NewScene(Matrix.Matrix)
 
 	car := entities.NewCar(scene.CarPosX, scene.CarPosY) // Create the car
 
@@ -520,14 +521,19 @@ func (g *Game) SetCarPath(algorithmKey string) {
 	var newPath [][]int // Declare newPath outside the conditional block
 	startTime := time.Now()
 	switch algorithmKey {
-	case "dummyAlgorithm":
-		newPath = searchAlgorithms.DummyAlgorithm() // Call the dummy algorithm
-		g.nodesExpanded = 1
-		g.treeDepth = 2
+	case "Breadth First Algorithm":
+		result := searchAlgorithms.StartSearch(1, Matrix) // Call the dummy algorithm
+		var mappedCoordinates [][]int
+		for _, coord := range result.PathFound {
+			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
+		}
+		newPath = mappedCoordinates
+		g.nodesExpanded = result.ExpandenNodes
+		g.treeDepth = result.TreeDepth
 		g.solutionCost = 3
   case "AStar":
 
-    envMatrix,_ := searchAlgorithms.ValidateMatrix(Matrix)
+    envMatrix,_ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
     env, err := searchAlgorithms.NewEnvironment(envMatrix)
     if err != nil {
         log.Fatalf("Error creating environment: %v", err)
@@ -559,15 +565,11 @@ func (g *Game) SetCarPath(algorithmKey string) {
 }
 
 func (g *Game) SetScene(fileName string) {
-	Matrix, err := utils.GetMatrix(fileName) // Load the Matrix
-	if err != nil {
-		log.Fatal(err) // Handle the error appropriately
-	}
 
 	// Create the scene
-	g.scene = NewScene(Matrix)
+	g.scene = NewScene(Matrix.Matrix)
 
-	scene := NewScene(Matrix)
+	scene := NewScene(Matrix.Matrix)
 
 	g.car = entities.NewCar(scene.CarPosX, scene.CarPosY)
 

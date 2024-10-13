@@ -93,7 +93,7 @@ func (a *AStarSearch) LookForGoal(env *Environment) SearchResult {
     }
 
     if currentNode.Position == env.GoalPosition && currentNode.HasPickedUpPassenger {
-      totalPath := reconstructPath(currentNode)
+      totalPath := reconstructPathU(currentNode)
       totalCost := currentNode.G
       timeExecuted := time.Since(startTime)
 
@@ -200,7 +200,7 @@ func getCellCost(cellValue int) float32 {
   }
 }
 
-func reconstructPath(node *Node) []Position {
+func reconstructPathU(node *Node) []Position {
   var path []Position
   current := node
   for current != nil {
