@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
 	"math"
-	"sort"
 	"time"
 )
 
@@ -97,28 +96,56 @@ func removeDuplicates(slice []datatypes.BoardCoordinate) []datatypes.BoardCoordi
 	return result
 }
 
+type Predicate[T any] func(T) bool
+
+// Generic Find function that takes a slice of any type and a predicate
+func Find[T any](slice []T, predicate Predicate[T]) (T, bool) {
+	for _, value := range slice {
+		if predicate(value) {
+			return value, true // Return the index if the predicate is true
+		}
+	}
+	var zeroValue T
+	return zeroValue, false // Return -1 if no element satisfies the predicate
+}
+
 func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
-	parentNodes := make(datatypes.Set) // For Hold the parents node removed from the queue
+	// For build the complete path at the end.
+	var paths [][]datatypes.AgentStep
+	// Keep the parent nodes saved then these were removed from the queue
+	parentNodes := []datatypes.AgentStep{}
+	// Keep the expanded nodes
 	expandenNodes := 0
-	treeDepth := 0
+	// Get the initial position from the pass in environment
 	initialPosition := e.agent.position
+	// Data structure that implement the FIFO queue
 	queue := datatypes.Queue[datatypes.AgentStep]{}
 	queue.Enqueue(initialPosition)
+
+	// Start the computation time
 	start := time.Now()
+	// Check if there are more children vto process
 	for !queue.IsEmpty() {
+
 		currentStep, empty := queue.Dequeue()
 		if empty {
 			return SearchResult{
 				[]datatypes.BoardCoordinate{},
 				false,
 				expandenNodes,
-				treeDepth,
-				0.5,
+				0,
+				0,
 				time.Now().Sub(start),
 			}
 		}
-		parentNodes.Add(currentStep)
-		fmt.Printf("current: %s", currentStep)
+		parentNodes = append(parentNodes, currentStep)
+		fmt.Println("***************************************************")
+		fmt.Println("")
+		fmt.Printf("current: \n", currentStep)
+		fmt.Println("")
+		fmt.Println("***************************************************")
+		fmt.Println("")
+		time.Sleep(1000 * time.Millisecond)
 
 		if e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 5 {
 			e.passengerPosition = datatypes.BoardCoordinate{
@@ -131,10 +158,10 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 				e.agent.searchAlgorithm,
 				e.agent.ambientPerception,
 			}
-			parentNodes = make(datatypes.Set)
-			parentNodes.Add(datatypes.AgentStep{
-				Action:          datatypes.UP,
-				Depth:           0,
+			paths = append(paths, parentNodes)
+			parentNodes = append(parentNodes, datatypes.AgentStep{
+				Action:          currentStep.Action,
+				Depth:           currentStep.Depth + 1,
 				CurrentPosition: currentStep.CurrentPosition,
 				PreviousPosition: datatypes.BoardCoordinate{
 					X: math.MaxInt,
@@ -151,82 +178,51 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 			// 		Y: math.MaxInt,
 			// 	},
 			// })
-
 		}
 
-		if false && e.agent.passenger && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 6 {
+		if e.agent.passenger && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 6 {
 			end := time.Now()
 			traveledPath := []datatypes.BoardCoordinate{}
-			traveledStep := currentStep.CurrentPosition
-			fmt.Println("Passenger ", e.passengerPosition)
+			traveledStep := currentStep
 
-			for traveledStep.X != e.passengerPosition.X && e.passengerPosition.Y != traveledStep.Y { //
-				fmt.Println("Traveled path: ", traveledPath)
-				fmt.Println("Traveled step: ", traveledStep)
-				fmt.Println("passenger ", e.passengerPosition)
-				fmt.Println("Parents ", parentNodes)
-				passes := []datatypes.AgentStep{}
-				for key, _ := range parentNodes {
-					//fmt.Println("Element: ", key)
-					if step, ok := key.(datatypes.AgentStep); ok {
-						if step.CurrentPosition.X == traveledStep.X && step.CurrentPosition.Y == traveledStep.Y {
-							passes = append(passes, datatypes.AgentStep{
-								Action:           step.Action,
-								Depth:            step.Depth,
-								CurrentPosition:  step.CurrentPosition,
-								PreviousPosition: step.PreviousPosition,
-							})
-						}
+			// Start backtracking from the goal to the initial position
+			for traveledStep.CurrentPosition != e.agent.position.CurrentPosition {
+				// Store the current position in the path
+				traveledPath = append([]datatypes.BoardCoordinate{traveledStep.CurrentPosition}, traveledPath...)
 
-						// if step.CurrentPosition.X == step.PreviousPosition.X && step.CurrentPosition.Y == step.PreviousPosition.Y {
-						// 	traveledStep = traveledPath[len(traveledPath)-1]
-						// }
-						// if traveledStep.X == e.passengerPosition.X && traveledStep.Y == e.passengerPosition.Y {
-						// 	// Set the final variable before exiting the loop
-						// 	traveledPath = append(traveledPath, datatypes.BoardCoordinate{
-						// 		X: step.PreviousPosition.X,
-						// 		Y: step.PreviousPosition.Y,
-						// 	})
-						// }
-					} else { //
-						fmt.Println("element is not of type AgentStep")
-					}
-				}
-				// Sort by Direction Weight
-				sort.Sort(datatypes.ByAction(passes))
-				fmt.Println("Same coordinate", passes)
-				if len(passes) > 0 {
-					passed := passes[0]
-					priory := parentNodes.GetAndRemove(passed)
-					fmt.Println("Passed ", priory)
-					traveledPath = append(traveledPath, datatypes.BoardCoordinate{
-						X: passed.CurrentPosition.X,
-						Y: passed.CurrentPosition.Y,
-					})
-					fmt.Println("Traveled", traveledPath)
-					time.Sleep(1000 * time.Millisecond)
-					traveledStep = passed.PreviousPosition
+				// Find the previous step by matching the PreviousPosition
+				predecessor, found := Find(parentNodes, func(agent datatypes.AgentStep) bool {
+					return agent.CurrentPosition == traveledStep.PreviousPosition
+				})
+
+				if found {
+					traveledStep = predecessor // Move to the previous step
+				} else {
+					break // Exit if no predecessor is found
 				}
 			}
+
+			// Add the initial position to the path
+			traveledPath = append([]datatypes.BoardCoordinate{e.agent.position.CurrentPosition}, traveledPath...)
 
 			return SearchResult{
 				traveledPath,
 				true,
 				expandenNodes,
-				treeDepth,
+				len(traveledPath),
 				1.333,
 				end.Sub(start),
 			}
 		}
-		fmt.Println("\nPosition: %s", currentStep)
+
+		fmt.Println("\nPosition: ", currentStep)
 		e.agent.position = currentStep
 		agentPerception := Percept(e.agent, e.board)
 		expandenNodes++
 		for _, perception := range agentPerception {
 			fmt.Println("perception ", perception)
-			fmt.Println("step ", currentStep.PreviousPosition)
-			fmt.Println("parent ", parentNodes)
-			fmt.Println("Queeu ", queue)
+			fmt.Println("Previous step ", currentStep.PreviousPosition)
+			fmt.Println("parentNodes ", parentNodes)
 			if (perception.Coordinate.X != currentStep.PreviousPosition.X) || (perception.Coordinate.Y != currentStep.PreviousPosition.Y) {
 				fmt.Println("entra")
 				queue.Enqueue(
@@ -239,6 +235,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 				)
 			}
 		}
+		fmt.Println("Queu ", queue)
 	}
 	fmt.Println("No solution found")
 	return SearchResult{}
