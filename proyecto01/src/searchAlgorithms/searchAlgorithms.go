@@ -17,6 +17,51 @@ const (
 	GOAL
 )
 
+type Node struct {
+    Position             Position
+    Parent               *Node
+    G                    float32 // Costo desde el inicio hasta el nodo actual
+    H                    float32 // Costo heurístico al objetivo
+    F                    float32 // Costo total (F = G + H)
+    Depth                int
+    HasPickedUpPassenger bool
+}
+
+
+type PriorityQueue struct {
+    nodes   []*Node
+    compare func(a, b *Node) bool
+}
+
+func (pq PriorityQueue) Len() int { return len(pq.nodes) }
+
+func (pq PriorityQueue) Less(i, j int) bool {
+    return pq.compare(pq.nodes[i], pq.nodes[j])
+}
+
+type State struct {
+  Position             Position
+  HasPickedUpPassenger bool
+}
+
+func (pq PriorityQueue) Swap(i, j int) {
+    pq.nodes[i], pq.nodes[j] = pq.nodes[j], pq.nodes[i]
+}
+
+func (pq *PriorityQueue) Push(x interface{}) {
+    node := x.(*Node)
+    pq.nodes = append(pq.nodes, node)
+}
+
+func (pq *PriorityQueue) Pop() interface{} {
+    old := pq.nodes
+    n := len(old)
+    node := old[n-1]
+    pq.nodes = old[0 : n-1]
+    return node
+}
+
+
 // Position representa una posición en la matriz.
 type Position struct {
 	X, Y int

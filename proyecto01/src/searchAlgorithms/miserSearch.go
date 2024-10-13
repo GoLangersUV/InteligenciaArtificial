@@ -5,13 +5,13 @@ import (
   "time"
 )
 
-type AStarSearch struct{}
+type MiserSearch struct{}
 
-func (a *AStarSearch) LookForGoal(env *Environment) SearchResult {
+func (m *MiserSearch) LookForGoal(env *Environment) SearchResult {
   startTime := time.Now()
 
   compare := func(a, b *Node) bool {
-    return a.F < b.F
+    return a.H < b.H
   }
 
   openList := &PriorityQueue{compare: compare}
@@ -20,9 +20,7 @@ func (a *AStarSearch) LookForGoal(env *Environment) SearchResult {
 
   startNode := &Node{
     Position:             env.InitPosition,
-    G:                    0,
     H:                    heuristic(&Node{Position: env.InitPosition}, env),
-    F:                    0 + heuristic(&Node{Position: env.InitPosition}, env),
     Depth:                0,
     HasPickedUpPassenger: false,
   }
@@ -41,14 +39,13 @@ func (a *AStarSearch) LookForGoal(env *Environment) SearchResult {
 
     if currentNode.Position == env.GoalPosition && currentNode.HasPickedUpPassenger {
       totalPath := reconstructPathI(currentNode)
-      totalCost := currentNode.G
       timeExecuted := time.Since(startTime)
 
       return SearchResult{
         SolutionFound: true,
         ExpandedNodes: expandedNodes,
         TreeDepth:     maxDepth,
-        Cost:          totalCost,
+        Cost:          -1, // No calculamos el costo real en búsqueda ávara
         TimeExecuted:  timeExecuted,
         Path:          totalPath,
       }
@@ -60,7 +57,7 @@ func (a *AStarSearch) LookForGoal(env *Environment) SearchResult {
     }
     closedList[state] = true
 
-    successors := getSuccessors(currentNode, env, true)
+    successors := getSuccessors(currentNode, env, false) 
 
     for _, successor := range successors {
       state := State{
