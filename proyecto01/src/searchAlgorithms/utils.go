@@ -44,3 +44,30 @@ func GetMatrix() ([][]int, error) {
 
 	return matrix, nil
 }
+
+func FromPosToPath(path []Position) [][]int {
+    result := make([][]int, len(path))
+    for i, pos := range path {
+        result[i] = []int{pos.X, pos.Y}
+    }
+    return result
+}
+
+func ValidateMatrix(matrix [][]int) ([10][10]int, error) {
+    var result [10][10]int
+
+    if len(matrix) != 10 {
+        return result, fmt.Errorf("La matriz debe tener 10 filas, pero tiene %d", len(matrix))
+    }
+
+    for i := 0; i < 10; i++ {
+        if len(matrix[i]) != 10 {
+            return result, fmt.Errorf("La fila %d debe tener 10 columnas, pero tiene %d", i, len(matrix[i]))
+        }
+        for j := 0; j < 10; j++ {
+            result[i][j] = matrix[i][j]
+        }
+    }
+
+    return result, nil
+}

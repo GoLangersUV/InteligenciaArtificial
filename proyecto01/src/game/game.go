@@ -72,17 +72,16 @@ const (
 
 var (
 	uninformedAlgorithms []string = []string{"dummyAlgorithm", "aUninformedAgorithm"}
-	informedAlgorithms   []string = []string{"dummyAlgorithm", "anInformedAgorithm"}
+	informedAlgorithms   []string = []string{"dummyAlgorithm", "AStar"}
 )
 
+var Matrix = [][]int{}
+
 func NewGame(matrixFileName string) (*Game, error) {
-	matrix, err := utils.GetMatrix(matrixFileName) // Load the matrix
-	if err != nil {
-		return nil, err
-	}
+	Matrix, _ = utils.GetMatrix(matrixFileName) // Load the Matrix
 
 	// Create the scene
-	scene := NewScene(matrix)
+	scene := NewScene(Matrix)
 
 	car := entities.NewCar(scene.CarPosX, scene.CarPosY) // Create the car
 
@@ -526,6 +525,22 @@ func (g *Game) SetCarPath(algorithmKey string) {
 		g.nodesExpanded = 1
 		g.treeDepth = 2
 		g.solutionCost = 3
+  case "AStar":
+
+    envMatrix,_ := searchAlgorithms.ValidateMatrix(Matrix)
+    env, err := searchAlgorithms.NewEnvironment(envMatrix)
+    if err != nil {
+        log.Fatalf("Error creating environment: %v", err)
+    }
+    aStarSearch := new(searchAlgorithms.AStarSearch)
+    agent := searchAlgorithms.NewAgent(env.InitPosition, aStarSearch)
+
+    result := agent.SearchAlgorithm.LookForGoal(env)
+    newPath = searchAlgorithms.FromPosToPath(result.Path)
+    g.nodesExpanded = result.ExpandedNodes
+    g.treeDepth = result.TreeDepth
+    g.solutionCost = float64(result.Cost)
+
 	default:
 		newPath = [][]int{} // Initialize with an empty slice for other cases
 	}
@@ -544,15 +559,15 @@ func (g *Game) SetCarPath(algorithmKey string) {
 }
 
 func (g *Game) SetScene(fileName string) {
-	matrix, err := utils.GetMatrix(fileName) // Load the matrix
+	Matrix, err := utils.GetMatrix(fileName) // Load the Matrix
 	if err != nil {
 		log.Fatal(err) // Handle the error appropriately
 	}
 
 	// Create the scene
-	g.scene = NewScene(matrix)
+	g.scene = NewScene(Matrix)
 
-	scene := NewScene(matrix)
+	scene := NewScene(Matrix)
 
 	g.car = entities.NewCar(scene.CarPosX, scene.CarPosY)
 

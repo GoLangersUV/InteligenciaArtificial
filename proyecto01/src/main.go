@@ -23,7 +23,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	g.SetCarPath("callDummy")
+	g.SetCarPath("AStar")
 
 	ebiten.SetWindowSize(640, 640)
 	ebiten.SetWindowTitle("DidIA Game")
