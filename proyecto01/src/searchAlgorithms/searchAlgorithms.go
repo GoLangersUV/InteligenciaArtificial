@@ -120,7 +120,6 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 
 	start := time.Now()
 
-	passengerFound := false                          // Flag to track if the passenger is found
 	pathToPassenger := []datatypes.BoardCoordinate{} // Path from initial position to the passenger
 	pathToGoal := []datatypes.BoardCoordinate{}      // Path from passenger to the goal
 
@@ -140,28 +139,38 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 		parentNodes = append(parentNodes, currentStep)
 
 		// Phase 1: Find the passenger
-		if !passengerFound && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 5 {
+		if !e.agent.passenger && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 5 {
 			e.passengerPosition = datatypes.BoardCoordinate{
 				X: currentStep.CurrentPosition.X,
 				Y: currentStep.CurrentPosition.Y,
 			}
 			e.agent.passenger = true // Mark the agent as having picked up the passenger
-			passengerFound = true    // Mark that the passenger has been found
 
 			// Reconstruct path from the initial position to the passenger
 			pathToPassenger = reconstructPath(parentNodes, currentStep)
 
+			fmt.Println("Path to passenger: %s", pathToPassenger)
+			fmt.Println("Nodes a Passenger: %s", parentNodes)
 			// Clear the queue and start BFS again from the passenger's position
 			queue.Clear()
-			parentNodes = nil          // Clear parent nodes for the next phase
-			queue.Enqueue(currentStep) // Start from the passenger's position
+			parentNodes = nil // Clear parent nodes for the next phase
+			queue.Enqueue(
+				datatypes.AgentStep{
+					PreviousPosition: datatypes.BoardCoordinate{
+						X: math.MaxInt,
+						Y: math.MaxInt,
+					},
+					CurrentPosition: currentStep.CurrentPosition,
+					Depth:           currentStep.Depth + 1,
+					Action:          2,
+				},
+			) // Start from the passenger's position
 			continue
 		}
 
 		// Phase 2: Search for the goal (once the passenger is found)
-		if passengerFound && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 6 {
+		if e.agent.passenger && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 6 {
 			end := time.Now()
-
 			// Reconstruct path from the passenger to the goal
 			pathToGoal = reconstructPath(parentNodes, currentStep)
 
