@@ -71,7 +71,7 @@ const (
 )
 
 var (
-	uninformedAlgorithms []string = []string{"Breadth First Algorithm"}
+	uninformedAlgorithms []string = []string{"Breadth First Algorithm", "Uniform Cost Search"}
 	informedAlgorithms   []string = []string{"dummyAlgorithm", "anInformedAgorithm"}
 )
 
@@ -530,6 +530,19 @@ func (g *Game) SetCarPath(algorithmKey string) {
 			break
 		}
 		result := searchAlgorithms.StartSearch(1, scannedMatrix) // Call the dummy algorithm
+		var mappedCoordinates [][]int
+		for _, coord := range result.PathFound {
+			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
+		}
+		newPath = mappedCoordinates
+		g.nodesExpanded = result.ExpandenNodes
+		g.treeDepth = result.TreeDepth
+		g.solutionCost = 3
+	case "Uniform Cost Search":
+		if error != nil {
+			break
+		}
+		result := searchAlgorithms.StartSearch(2, scannedMatrix) // Call the dummy algorithm
 		var mappedCoordinates [][]int
 		for _, coord := range result.PathFound {
 			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
