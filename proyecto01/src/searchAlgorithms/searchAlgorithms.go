@@ -17,7 +17,7 @@ type enviroment struct {
 
 // SearchAlgorithm is the interface that the search algorithms must implement
 type SearchAgorithm interface {
-	LookForGoal(*enviroment) SearchResult
+	LookForGoal(*enviroment)  SearchResult
 }
 
 // agent represents the agent that is going to move in the enviroment
@@ -279,11 +279,7 @@ func (a *DepthSearch) LookForGoal(e *enviroment) SearchResult {
 	return SearchResult{}
 }
 
-func StartGame(strategy int) {
-	scannedMatrix, error := GetMatrix()
-	if error != nil {
-		fmt.Println("Error to load the matrix")
-	}
+func StartGame(strategy int, scannedMatrix datatypes.ScannedMatrix) {	
 
 	var searchStrategy SearchAgorithm
 
@@ -326,4 +322,35 @@ func StartGame(strategy int) {
 
 	}
 
+func DummyAlgorithm() [][]int {
+	carPath := [][]int{
+		{2, 0},
+		{3, 0},
+		{4, 0},
+		{5, 0},
+		{6, 0},
+		{5, 0},
+		{4, 0},
+		{3, 0},
+		{3, 1},
+		{3, 2},
+		{3, 3},
+		{2, 3},
+		{1, 3},
+		{1, 4},
+		{1, 5},
+		{2, 5},
+		{3, 5},
+		{3, 6},
+		{3, 7},
+		{2, 7},
+		{1, 7},
+		{1, 8},
+		{1, 9},
+		{2, 9},
+		{3, 9},
+		{4, 9},
+		{5, 9},
+	}
+	return carPath
 }

@@ -1,22 +1,34 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/Krud3/InteligenciaArtificial/src/searchAlgorithms"
+	"image"
+	"log"
+
+	"github.com/Krud3/InteligenciaArtificial/src/game"
+	"github.com/Krud3/InteligenciaArtificial/src/utils"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
-func main() {
-	fmt.Println("Selecciona un numero de strategy")
+var g *game.Game
 
-	strategy := flag.Int("strategy", 1, "Search Strategy")
-	// Additional logic based on the command-line arguments
-	if *strategy >= 1 && *strategy < 5 {
-		// Define flags for command-line arguments
-		// Parse the command-line arguments
-		flag.Parse()
-		searchAlgorithms.StartGame(*strategy)
-	} else {
-		fmt.Println("Enter a valid strategy value")
+func main() {
+
+	icon := utils.LoadIcon("./game/assets/images/cantidad-nodos.png")
+
+	matrixFileName := "Prueba1.txt"
+
+	var err error
+	g, err = game.NewGame(matrixFileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	g.SetCarPath("callDummy")
+	ebiten.SetWindowSize(640, 640)
+	ebiten.SetWindowTitle("DidIA Game")
+	ebiten.SetWindowIcon([]image.Image{icon})
+	if err := ebiten.RunGame(g); err != nil {
+		log.Fatal(err)
 	}
 }

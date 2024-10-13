@@ -1,13 +1,12 @@
-package searchAlgorithms
+package utils
 
 import (
 	"bufio"
 	"fmt"
+	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
 )
 
 func coordinateType(x int, y int, coordinateValue int, coordinateMap map[string]datatypes.BoardCoordinate) {
