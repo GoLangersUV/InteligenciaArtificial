@@ -1,7 +1,6 @@
 package searchAlgorithms
 
 import (
-	"fmt"
 	"math"
 	"time"
 
@@ -25,19 +24,19 @@ func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 	pathToPassenger := []datatypes.BoardCoordinate{}
 	pathToGoal := []datatypes.BoardCoordinate{}
 
-	fmt.Println("Iniciando búsqueda en profundidad...")
-	fmt.Printf("Posición inicial del agente: [%d, %d]\n", initialPosition.CurrentPosition.X, initialPosition.CurrentPosition.Y)
+	//fmt.Println("Iniciando búsqueda en profundidad...")
+	//fmt.Printf("Posición inicial del agente: [%d, %d]\n", initialPosition.CurrentPosition.X, initialPosition.CurrentPosition.Y)
 
 	for len(stack) > 0 {
-		fmt.Println("\nEstado actual de la pila:", stack)
+		//fmt.Println("\nEstado actual de la pila:", stack)
 
 		currentStep := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
 
-		fmt.Printf("Nodo desapilado: [%d, %d]\n", currentStep.CurrentPosition.X, currentStep.CurrentPosition.Y)
+		//fmt.Printf("Nodo desapilado: [%d, %d]\n", currentStep.CurrentPosition.X, currentStep.CurrentPosition.Y)
 
 		if visited[currentStep.CurrentPosition] {
-			fmt.Printf("Nodo [%d, %d] ya visitado, continuando...\n", currentStep.CurrentPosition.X, currentStep.CurrentPosition.Y)
+			//fmt.Printf("Nodo [%d, %d] ya visitado, continuando...\n", currentStep.CurrentPosition.X, currentStep.CurrentPosition.Y)
 			continue
 		}
 		visited[currentStep.CurrentPosition] = true
@@ -47,11 +46,11 @@ func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 		cellValue := e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y]
 		cellCost := getCellCost(cellValue)
 		totalCost += cellCost
-		fmt.Printf("Pasando por la casilla [%d, %d] con valor %d, costo acumulado: %.2f\n", currentStep.CurrentPosition.X, currentStep.CurrentPosition.Y, cellValue, totalCost)
+		//fmt.Printf("Pasando por la casilla [%d, %d] con valor %d, costo acumulado: %.2f\n", currentStep.CurrentPosition.X, currentStep.CurrentPosition.Y, cellValue, totalCost)
 
 		// Phase 1: Find the passenger
 		if !e.agent.passenger && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 5 {
-			fmt.Println("Pasajero encontrado en la posición:", currentStep.CurrentPosition)
+			//fmt.Println("Pasajero encontrado en la posición:", currentStep.CurrentPosition)
 
 			e.passengerPosition = datatypes.BoardCoordinate{
 				X: currentStep.CurrentPosition.X,
@@ -65,7 +64,7 @@ func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 			parentNodes = nil
 			visited = make(map[datatypes.BoardCoordinate]bool)
 
-			// Reiniciar búsqueda desde la posición actual del pasajero pero sin añadirla nuevamente al path
+			// start the search again from the passenger
 			stack = append(stack, datatypes.AgentStep{
 				PreviousPosition: datatypes.BoardCoordinate{
 					X: math.MaxInt,
@@ -74,22 +73,22 @@ func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 				CurrentPosition: currentStep.CurrentPosition,
 				Depth:           currentStep.Depth + 1,
 			})
-			fmt.Println("Reiniciando la búsqueda desde el pasajero.")
+			//fmt.Println("Reiniciando la búsqueda desde el pasajero.")
 			continue
 		}
 
 		// Phase 2: Find the goal
 		if e.agent.passenger && e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == 6 {
-			fmt.Println("Destino encontrado en la posición:", currentStep.CurrentPosition)
+			//fmt.Println("Destino encontrado en la posición:", currentStep.CurrentPosition)
 			end := time.Now()
 
-			// Reconstruir el camino hacia el destino
+			// Build the path to the goal
 			pathToGoal = reconstructPath(parentNodes, currentStep)[1:]
 
-			// Combinar los dos caminos sin repetir la posición del pasajero
+			// Merege the path to the passenger with the path to the goal
 			combinedPath := append(pathToPassenger, pathToGoal...)
 
-			// Recalcular el costo total basado en el camino encontrado
+			// Recalculate the cost of the combined path
 			finalCost := float32(0)
 			for _, step := range combinedPath {
 				cellValue := e.board[step.X][step.Y]
@@ -97,21 +96,20 @@ func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 				finalCost += cellCost
 			}
 
-			// Imprimir el camino final encontrado
-			fmt.Println("Camino encontrado desde el agente hasta el destino:")
-			for _, step := range combinedPath {
-				fmt.Printf("[%d, %d] -> ", step.X, step.Y)
-			}
-			fmt.Println("FIN")
+			//fmt.Println("Camino encontrado desde el agente hasta el destino:")
+			//for _, step := range combinedPath {
+			//fmt.Printf("[%d, %d] -> ", step.X, step.Y)
+			//}
+			//fmt.Println("FIN")
 
-			fmt.Printf("Tiempo de ejecución: %v\n", end.Sub(start))
+			//fmt.Printf("Tiempo de ejecución: %v\n", end.Sub(start))
 
 			return datatypes.SearchResult{
 				PathFound:     combinedPath,
 				SolutionFound: true,
 				ExpandenNodes: expandedNodes,
 				TreeDepth:     len(combinedPath),
-				Cost:          finalCost - 1, // Ajustar el costo restando el último paso si es necesario
+				Cost:          finalCost - 1,
 				TimeExe:       end.Sub(start),
 			}
 		}
@@ -121,11 +119,11 @@ func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 		agentPerception := Percept(e.agent, e.board)
 		expandedNodes++
 
-		fmt.Printf("Expandiendo vecinos del nodo [%d, %d]: %v\n", currentStep.CurrentPosition.X, currentStep.CurrentPosition.Y, agentPerception)
+		//fmt.Printf("Expandiendo vecinos del nodo [%d, %d]: %v\n", currentStep.CurrentPosition.X, currentStep.CurrentPosition.Y, agentPerception)
 
 		for _, perception := range agentPerception {
 			if !visited[perception.Coordinate] && perception.Coordinate != currentStep.PreviousPosition {
-				fmt.Printf("Apilando nodo: [%d, %d]\n", perception.Coordinate.X, perception.Coordinate.Y)
+				//fmt.Printf("Apilando nodo: [%d, %d]\n", perception.Coordinate.X, perception.Coordinate.Y)
 				stack = append(stack, datatypes.AgentStep{
 					Action:           perception.Direction,
 					Depth:            currentStep.Depth + 1,
@@ -133,12 +131,12 @@ func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 					PreviousPosition: currentStep.CurrentPosition,
 				})
 			} else {
-				fmt.Printf("Vecino [%d, %d] ya visitado o es el nodo previo, no apilado.\n", perception.Coordinate.X, perception.Coordinate.Y)
+				//fmt.Printf("Vecino [%d, %d] ya visitado o es el nodo previo, no apilado.\n", perception.Coordinate.X, perception.Coordinate.Y)
 			}
 		}
 	}
 
-	fmt.Println("No se encontró una solución.")
+	//fmt.Println("No se encontró una solución.")
 	return datatypes.SearchResult{
 		SolutionFound: false,
 		ExpandenNodes: expandedNodes,
