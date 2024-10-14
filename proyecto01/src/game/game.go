@@ -531,29 +531,34 @@ func (g *Game) SetCarPath(algorithmKey string) {
 		g.nodesExpanded = result.ExpandenNodes
 		g.treeDepth = result.TreeDepth
 		g.solutionCost = 3
-  case "A*":
-    envMatrix,_ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
-    env, err := searchAlgorithms.NewEnvironment(envMatrix)
-    if err != nil {
-        log.Fatalf("Error creating environment: %v", err)
-    }
-    aStarSearch := new(searchAlgorithms.AStarSearch)
-    agent := searchAlgorithms.NewAgent(env.InitPosition, aStarSearch)
+	case "A*":
+		envMatrix, _ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
+		env, err := searchAlgorithms.NewEnvironment(envMatrix)
+		if err != nil {
+			log.Fatalf("Error creating environment: %v", err)
+		}
+		aStarSearch := new(searchAlgorithms.AStarSearch)
+		agent := searchAlgorithms.NewAgent(env.InitPosition, aStarSearch)
 
-    result := agent.SearchAlgorithm.LookForGoal(env)
-    newPath = searchAlgorithms.FromPosToPath(result.Path)
-    g.nodesExpanded = result.ExpandedNodes
-    g.treeDepth = result.TreeDepth
-    g.solutionCost = float64(result.Cost)
-  case "Avaro":
-    envMatrix,_ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
-    env, err := searchAlgorithms.NewEnvironment(envMatrix)
-    if err != nil {
-        log.Fatalf("Error creating environment: %v", err)
-    }
-    miserSearch := new(searchAlgorithms.MiserSearch)
-    agent := searchAlgorithms.NewAgent(env.InitPosition, miserSearch)
-    
+		result := agent.SearchAlgorithm.LookForGoal(env)
+		newPath = searchAlgorithms.FromPosToPath(result.Path)
+		g.nodesExpanded = result.ExpandedNodes
+		g.treeDepth = result.TreeDepth
+		g.solutionCost = float64(result.Cost)
+	case "Avaro":
+		envMatrix, _ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
+		env, err := searchAlgorithms.NewEnvironment(envMatrix)
+		if err != nil {
+			log.Fatalf("Error creating environment: %v", err)
+		}
+		miserSearch := new(searchAlgorithms.MiserSearch)
+		agent := searchAlgorithms.NewAgent(env.InitPosition, miserSearch)
+		result := agent.SearchAlgorithm.LookForGoal(env)
+		newPath = searchAlgorithms.FromPosToPath(result.Path)
+		g.nodesExpanded = result.ExpandedNodes
+		g.treeDepth = result.TreeDepth
+		g.solutionCost = float64(result.Cost)
+
 	case "DepthSearch":
 
 		result := searchAlgorithms.StartSearch(3, Matrix)
@@ -575,11 +580,6 @@ func (g *Game) SetCarPath(algorithmKey string) {
 		g.treeDepth = result.TreeDepth
 		g.solutionCost = float64(result.Cost)
 
-    result := agent.SearchAlgorithm.LookForGoal(env)
-    newPath = searchAlgorithms.FromPosToPath(result.Path)
-    g.nodesExpanded = result.ExpandedNodes
-    g.treeDepth = result.TreeDepth
-    g.solutionCost = float64(result.Cost)
 	default:
 		newPath = [][]int{} // Initialize with an empty slice for other cases
 	}
