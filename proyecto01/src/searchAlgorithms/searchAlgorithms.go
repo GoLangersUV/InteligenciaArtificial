@@ -312,30 +312,31 @@ func reconstructPath(parentNodes []datatypes.AgentStep, endStep datatypes.AgentS
 
 func (a *UniformCostSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 	// Step 1: Find the path to the passenger
-	pathToPassenger := a.findPath(e, 5)
+	start := time.Now()
+	pathToPassenger, passengerExpandedNodes, passengerCost := a.findPath(e, 5)
 	// If the path to the passenger is not found, return empty result
 	if len(pathToPassenger) == 0 {
 		return datatypes.SearchResult{
 			PathFound:     []datatypes.BoardCoordinate{},
 			SolutionFound: false,
-			ExpandenNodes: 0,
+			ExpandenNodes: passengerExpandedNodes,
 			TreeDepth:     0,
-			Cost:          0.0,
-			TimeExe:       0,
+			Cost:          float32(passengerCost),
+			TimeExe:       time.Since(start),
 		}
 	}
 	// Step 2: Find the path from the passenger to the goal
-	pathToGoal := a.findPath(e, 6)
+	pathToGoal, goalExpandedNodes, goalCost := a.findPath(e, 6)
 
 	// If the path to the goal is not found, return the path to the passenger
 	if len(pathToGoal) == 0 {
 		return datatypes.SearchResult{
 			PathFound:     pathToPassenger,
-			SolutionFound: true,
-			ExpandenNodes: 0, // You might want to count these nodes as well
-			TreeDepth:     0,
-			Cost:          0.0,
-			TimeExe:       0,
+			SolutionFound: false,
+			ExpandenNodes: goalExpandedNodes, // You might want to count these nodes as well
+			TreeDepth:     len(pathToPassenger),
+			Cost:          float32(goalCost),
+			TimeExe:       time.Since(start),
 		}
 	}
 
@@ -345,15 +346,15 @@ func (a *UniformCostSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 	return datatypes.SearchResult{
 		PathFound:     combinedPath,
 		SolutionFound: true,
-		ExpandenNodes: 0, // You might want to count these nodes as well
-		TreeDepth:     0,
-		Cost:          0.0,
-		TimeExe:       0,
+		ExpandenNodes: goalExpandedNodes + passengerExpandedNodes, // You might want to count these nodes as well
+		TreeDepth:     len(combinedPath),
+		Cost:          float32(goalCost + passengerCost),
+		TimeExe:       time.Since(start),
 	}
 }
 
 // Helper function to perform Uniform Cost Search from start to goal
-func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardCoordinate {
+func (a *UniformCostSearch) findPath(e *enviroment, goal int) ([]datatypes.BoardCoordinate, int, int) {
 	var parentNodes []datatypes.AgentStep // Holds parent nodes
 	expandenNodes := 0
 	priorityQueue := datatypes.PriorityQueue[datatypes.AgentStep]{}
@@ -378,7 +379,7 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardC
 		// Check if the current position is the goal
 		if e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == goal {
 			e.agent.position = currentStep
-			return reconstructPath(parentNodes, currentStep) // Implement this function to trace back the path
+			return reconstructPath(parentNodes, currentStep), expandenNodes, currentStep.Cost + 1 // Implement this function to trace back the path
 		}
 
 		parentNodes = append(parentNodes, currentStep)
@@ -408,7 +409,7 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardC
 			}
 		}
 	}
-	return []datatypes.BoardCoordinate{} // No path found to goal
+	return []datatypes.BoardCoordinate{}, expandenNodes, e.agent.position.Cost // No path found to goal
 }
 
 func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.SearchResult {
@@ -457,7 +458,6 @@ func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.
 		fmt.Println("Initial position not found")
 		return datatypes.SearchResult{}
 	}
-	return datatypes.SearchResult{}
 }
 
 // SearchResult encapsula los resultados de una búsqueda.
