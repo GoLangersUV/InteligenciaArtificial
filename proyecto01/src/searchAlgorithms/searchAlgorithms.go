@@ -253,11 +253,6 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 				cost += float32(getCellCost(e.board[combinedPath[step].X][combinedPath[step].Y]))
 			}
 
-			var cost float32
-			for step := range combinedPath {
-				cost += float32(getCellCost(e.board[combinedPath[step].X][combinedPath[step].Y]))
-			}
-
 			return datatypes.SearchResult{
 				PathFound:     combinedPath,
 				SolutionFound: true,
