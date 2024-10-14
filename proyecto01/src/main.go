@@ -16,14 +16,14 @@ var g *game.Game
 
 func main() {
 
-	cmd := flag.Bool("cdm", false, "interface option")
+	cmd := flag.Bool("cmd", false, "interface option")
 
 	// Parse the flags
 	flag.Parse()
 
 	// Check if verbose mode is enabled
 	if *cmd {
-		matrix, err := utils.GetMatrix("./search/battery/Prueba1.txt") // Load the matrix
+		matrix, err := utils.GetMatrix("../battery/Prueba1.txt") // Load the matrix
 		if err != nil {
 			log.Fatal(err)
 		}

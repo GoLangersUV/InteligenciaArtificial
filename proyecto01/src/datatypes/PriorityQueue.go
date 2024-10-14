@@ -21,7 +21,7 @@ func (pq *PriorityQueue[T]) Push(element Element[T]) {
 func (pq *PriorityQueue[T]) Pop() (T, bool) {
 	if len(pq.elements) == 0 {
 		var zero T
-		return zero, false
+		return zero, true
 	}
 	if len(pq.elements) == 1 {
 		return pq.elements[0].Value, true
@@ -30,7 +30,7 @@ func (pq *PriorityQueue[T]) Pop() (T, bool) {
 	pq.elements[0] = pq.elements[len(pq.elements)-1]
 	pq.elements = pq.elements[:len(pq.elements)-1]
 	pq.heapifyDown(0)
-	return root.Value, true
+	return root.Value, false
 }
 
 func (pq *PriorityQueue[T]) heapifyUp(index int) {

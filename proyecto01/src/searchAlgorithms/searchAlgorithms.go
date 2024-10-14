@@ -24,10 +24,10 @@ type Position struct {
 
 // Environment representa el entorno donde el agente se moverá.
 type Environment struct {
-	Matrix        *[10][10]int
-	InitPosition  Position
-	DogPosition   Position
-	GoalPosition  Position
+	Matrix       *[10][10]int
+	InitPosition Position
+	DogPosition  Position
+	GoalPosition Position
 }
 
 // NewEnvironment crea un nuevo entorno a partir de una matriz.
@@ -105,9 +105,10 @@ func DummyAlgorithm() [][]int {
 		{3, 9},
 		{4, 9},
 		{5, 9},
-  }
-  return carPath
+	}
+	return carPath
 }
+
 // enviroment represents the enviroment where the agent is going to move
 type enviroment struct {
 	agent             agent
@@ -379,15 +380,17 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardC
 	priorityQueue.Push(datatypes.Element[datatypes.AgentStep]{
 
 		Value: datatypes.AgentStep{
-			Depth:            e.agent.Depth,
-			Action:           e.agent.Action,
-			PreviousPosition: e.agent.PreviousPosition,
-			CurrentPosition:  e.agent.CurrentPosition,
+			Depth:            e.agent.position.Depth,
+			Action:           e.agent.position.Action,
+			PreviousPosition: e.agent.position.PreviousPosition,
+			CurrentPosition:  e.agent.position.CurrentPosition,
 		},
 		Priority: 0}, // Priority can be based on cost from start
 	)
 
 	for !priorityQueue.IsEmpty() {
+		fmt.Println("Priority Queue: ")
+		fmt.Println(priorityQueue)
 		currentStep, empty := priorityQueue.Pop()
 		if empty {
 			return []datatypes.BoardCoordinate{} // No items in the priority queue.
@@ -410,15 +413,16 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardC
 					datatypes.Element[datatypes.AgentStep]{
 						Value: datatypes.AgentStep{
 							Depth:            currentStep.Depth + 1,
-							Action:           perception.Action,
+							Action:           perception.Direction,
 							CurrentPosition:  perception.Coordinate,
 							PreviousPosition: currentStep.CurrentPosition,
 						},
-						Priority: currentStep.Priority + 1, // Set this based on the cost
+						Priority: currentStep.Depth + e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y], // Set this based on the cost
 					},
 				)
 			}
 		}
+		fmt.Println("Priority Queue end: ")
 	}
 	return []datatypes.BoardCoordinate{} // No path found to goal
 }
@@ -485,6 +489,7 @@ func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.
 	}
 	return datatypes.SearchResult{}
 }
+
 // SearchResult encapsula los resultados de una búsqueda.
 type SearchResult struct {
 	SolutionFound bool
