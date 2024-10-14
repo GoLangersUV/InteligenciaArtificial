@@ -1,88 +1,87 @@
 package searchAlgorithms
 
 import (
-  "container/heap"
-  "time"
+	"container/heap"
+	"time"
 )
 
 type MiserSearch struct{}
 
 func (m *MiserSearch) LookForGoal(env *Environment) SearchResult {
-  startTime := time.Now()
+	startTime := time.Now()
 
-  compare := func(a, b *Node) bool {
-    return a.H < b.H
-  }
+	compare := func(a, b *Node) bool {
+		return a.H < b.H
+	}
 
-  openList := &PriorityQueue{compare: compare}
-  heap.Init(openList)
-  closedList := make(map[State]bool)
+	openList := &PriorityQueue{compare: compare}
+	heap.Init(openList)
+	closedList := make(map[State]bool)
 
-  startNode := &Node{
-    Position:             env.InitPosition,
-    G:                    0,
-    H:                    heuristic(&Node{Position: env.InitPosition}, env),
-    Depth:                0,
-    HasPickedUpPassenger: false,
-  }
+	startNode := &Node{
+		Position:             env.InitPosition,
+		G:                    0,
+		H:                    heuristic(&Node{Position: env.InitPosition}, env),
+		Depth:                0,
+		HasPickedUpPassenger: false,
+	}
 
-  heap.Push(openList, startNode)
+	heap.Push(openList, startNode)
 
-  var expandedNodes int
-  var maxDepth int
+	var expandedNodes int
+	var maxDepth int
 
-  for openList.Len() > 0 {
-    currentNode := heap.Pop(openList).(*Node)
-    expandedNodes++
-    if currentNode.Depth > maxDepth {
-      maxDepth = currentNode.Depth
-    }
+	for openList.Len() > 0 {
+		currentNode := heap.Pop(openList).(*Node)
+		expandedNodes++
+		if currentNode.Depth > maxDepth {
+			maxDepth = currentNode.Depth
+		}
 
-    if currentNode.Position == env.GoalPosition && currentNode.HasPickedUpPassenger {
-      totalPath := reconstructPathI(currentNode)
-      totalCost := currentNode.G
-      timeExecuted := time.Since(startTime)
+		if currentNode.Position == env.GoalPosition && currentNode.HasPickedUpPassenger {
+			totalPath := reconstructPathI(currentNode)
+			totalCost := currentNode.G
+			timeExecuted := time.Since(startTime)
 
-      return SearchResult{
-        SolutionFound: true,
-        ExpandedNodes: expandedNodes,
-        TreeDepth:     maxDepth,
-        Cost:          totalCost,
-        TimeExecuted:  timeExecuted,
-        Path:          totalPath,
-      }
-    }
+			return SearchResult{
+				SolutionFound: true,
+				ExpandedNodes: expandedNodes,
+				TreeDepth:     maxDepth,
+				Cost:          totalCost,
+				TimeExecuted:  timeExecuted,
+				Path:          totalPath,
+			}
+		}
 
-    state := State{
-      Position:             currentNode.Position,
-      HasPickedUpPassenger: currentNode.HasPickedUpPassenger,
-    }
-    if closedList[state] {
-      continue
-    }
-    closedList[state] = true
+		state := State{
+			Position:             currentNode.Position,
+			HasPickedUpPassenger: currentNode.HasPickedUpPassenger,
+		}
+		if closedList[state] {
+			continue
+		}
+		closedList[state] = true
 
-    successors := getSuccessors(currentNode, env, false) 
+		successors := getSuccessors(currentNode, env, false)
 
-    for _, successor := range successors {
-      state := State{
-        Position:             successor.Position,
-        HasPickedUpPassenger: successor.HasPickedUpPassenger,
-      }
-      if closedList[state] {
-        continue
-      }
+		for _, successor := range successors {
+			state := State{
+				Position:             successor.Position,
+				HasPickedUpPassenger: successor.HasPickedUpPassenger,
+			}
+			if closedList[state] {
+				continue
+			}
 
-      heap.Push(openList, successor)
-    }
-  }
+			heap.Push(openList, successor)
+		}
+	}
 
-  timeExecuted := time.Since(startTime)
-  return SearchResult{
-    SolutionFound: false,
-    ExpandedNodes: expandedNodes,
-    TreeDepth:     maxDepth,
-    TimeExecuted:  timeExecuted,
-  }
+	timeExecuted := time.Since(startTime)
+	return SearchResult{
+		SolutionFound: false,
+		ExpandedNodes: expandedNodes,
+		TreeDepth:     maxDepth,
+		TimeExecuted:  timeExecuted,
+	}
 }
-

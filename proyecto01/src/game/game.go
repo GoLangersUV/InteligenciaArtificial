@@ -593,6 +593,7 @@ func (g *Game) SetScene(fileName string) {
 
 	Matrix, _ = utils.GetMatrix(fileName)
 	// Create the scene
+	Matrix, _ = utils.GetMatrix(fileName)
 	g.scene = NewScene(Matrix.Matrix)
 
 	scene := NewScene(Matrix.Matrix)
