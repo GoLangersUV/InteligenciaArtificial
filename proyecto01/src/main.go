@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"github.com/Krud3/InteligenciaArtificial/src/searchAlgorithms"
 	"image"
 	"log"
 

@@ -2,9 +2,10 @@ package searchAlgorithms
 
 import (
 	"fmt"
-	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
 	"math"
 	"time"
+
+	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
 )
 
 // enviroment represents the enviroment where the agent is going to move
@@ -17,7 +18,7 @@ type enviroment struct {
 
 // SearchAlgorithm is the interface that the search algorithms must implement
 type SearchAgorithm interface {
-	LookForGoal(*enviroment)  SearchResult
+	LookForGoal(*enviroment) datatypes.SearchResult
 }
 
 // agent represents the agent that is going to move in the enviroment
@@ -72,14 +73,6 @@ type UniformCostSearch struct{}
 
 type DepthSearch struct{}
 
-type SearchResult struct {
-	pathFound                []datatypes.BoardCoordinate
-	solutionFound            bool
-	expandenNodes, treeDepth int
-	cost                     float32
-	timeExe                  time.Duration
-}
-
 func removeDuplicates(slice []datatypes.BoardCoordinate) []datatypes.BoardCoordinate {
 	// Create a map to track seen items
 	seen := make(map[datatypes.BoardCoordinate]bool)
@@ -109,7 +102,7 @@ func Find[T any](slice []T, predicate Predicate[T]) (T, bool) {
 	return zeroValue, false // Return -1 if no element satisfies the predicate
 }
 
-func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
+func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 	var parentNodes []datatypes.AgentStep
 	// var paths [][]datatypes.AgentStep // To keep track of both the path to the passenger and from the passenger to the goal
 	expandenNodes := 0
@@ -126,13 +119,13 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 	for !queue.IsEmpty() {
 		currentStep, empty := queue.Dequeue()
 		if empty {
-			return SearchResult{
-				[]datatypes.BoardCoordinate{},
-				false,
-				expandenNodes,
-				0,
-				0,
-				time.Since(start),
+			return datatypes.SearchResult{
+				PathFound:     []datatypes.BoardCoordinate{},
+				SolutionFound: false,
+				ExpandenNodes: expandenNodes,
+				TreeDepth:     0,
+				Cost:          0,
+				TimeExe:       time.Since(start),
 			}
 		}
 
@@ -177,13 +170,13 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 			// Combine the two paths: initial -> passenger + passenger -> goal
 			combinedPath := append(pathToPassenger, pathToGoal...)
 
-			return SearchResult{
-				combinedPath,
-				true,
-				expandenNodes,
-				len(combinedPath),
-				1.333, // Example cost, you can modify it as needed
-				end.Sub(start),
+			return datatypes.SearchResult{
+				PathFound:     combinedPath,
+				SolutionFound: true,
+				ExpandenNodes: expandenNodes,
+				TreeDepth:     len(combinedPath),
+				Cost:          1.333, // Example cost, you can modify it as needed
+				TimeExe:       end.Sub(start),
 			}
 		}
 
@@ -206,7 +199,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) SearchResult {
 	}
 
 	fmt.Println("No solution found")
-	return SearchResult{}
+	return datatypes.SearchResult{}
 }
 
 // Helper function to reconstruct the path from a given node back to the start
@@ -234,7 +227,7 @@ func reconstructPath(parentNodes []datatypes.AgentStep, endStep datatypes.AgentS
 	return path
 }
 
-func (a *UniformCostSearch) LookForGoal(e *enviroment) SearchResult {
+func (a *UniformCostSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 	parentNodes := make(datatypes.Set) // For Hold the parents node removed from the queue
 	expandenNodes := 0
 	treeDepth := 0
@@ -247,13 +240,13 @@ func (a *UniformCostSearch) LookForGoal(e *enviroment) SearchResult {
 	for !priorityQueue.IsEmpty() {
 		currentStep, empty := priorityQueue.Pop()
 		if empty {
-			return SearchResult{
-				[]datatypes.BoardCoordinate{},
-				false,
-				expandenNodes,
-				treeDepth,
-				0.0,
-				0,
+			return datatypes.SearchResult{
+				PathFound:     []datatypes.BoardCoordinate{},
+				SolutionFound: false,
+				ExpandenNodes: expandenNodes,
+				TreeDepth:     treeDepth,
+				Cost:          0.0,
+				TimeExe:       0,
 			}
 		}
 		parentNodes.Add(currentStep)
@@ -270,16 +263,16 @@ func (a *UniformCostSearch) LookForGoal(e *enviroment) SearchResult {
 				)
 			}
 		}
-		return SearchResult{}
+		return datatypes.SearchResult{}
 	}
-	return SearchResult{}
+	return datatypes.SearchResult{}
 }
 
-func (a *DepthSearch) LookForGoal(e *enviroment) SearchResult {
-	return SearchResult{}
+func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
+	return datatypes.SearchResult{}
 }
 
-func StartGame(strategy int, scannedMatrix datatypes.ScannedMatrix) {	
+func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.SearchResult {
 
 	var searchStrategy SearchAgorithm
 
@@ -317,40 +310,9 @@ func StartGame(strategy int, scannedMatrix datatypes.ScannedMatrix) {
 			scannedMatrix.Matrix,
 			0},
 		)
-		fmt.Println(result)
+		return result
 	} else {
 
 	}
-
-func DummyAlgorithm() [][]int {
-	carPath := [][]int{
-		{2, 0},
-		{3, 0},
-		{4, 0},
-		{5, 0},
-		{6, 0},
-		{5, 0},
-		{4, 0},
-		{3, 0},
-		{3, 1},
-		{3, 2},
-		{3, 3},
-		{2, 3},
-		{1, 3},
-		{1, 4},
-		{1, 5},
-		{2, 5},
-		{3, 5},
-		{3, 6},
-		{3, 7},
-		{2, 7},
-		{1, 7},
-		{1, 8},
-		{1, 9},
-		{2, 9},
-		{3, 9},
-		{4, 9},
-		{5, 9},
-	}
-	return carPath
+	return datatypes.SearchResult{}
 }

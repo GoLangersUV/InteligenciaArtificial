@@ -71,12 +71,12 @@ const (
 )
 
 var (
-	uninformedAlgorithms []string = []string{"dummyAlgorithm", "aUninformedAgorithm"}
+	uninformedAlgorithms []string = []string{"Breadth First Algorithm"}
 	informedAlgorithms   []string = []string{"dummyAlgorithm", "anInformedAgorithm"}
 )
 
 func NewGame(matrixFileName string) (*Game, error) {
-	matrix, err := utils.GetMatrix(matrixFileName) // Load the matrix
+	matrix, err := utils.GetMatrix("./search/battery/Prueba1.txt") // Load the matrix
 	if err != nil {
 		return nil, err
 	}
@@ -520,23 +520,24 @@ func (g *Game) ListMatrixFiles() []string {
 func (g *Game) SetCarPath(algorithmKey string) {
 	var newPath [][]int // Declare newPath outside the conditional block
 	startTime := time.Now()
-	scannedMatrix, error := GetMatrix()
+	scannedMatrix, error := utils.GetMatrix("./search/battery/Prueba1.txt")
 	if error != nil {
 		fmt.Println("Error to load the matrix")
 	}
 	switch algorithmKey {
-	case "dummyAlgorithm":
+	case "Breadth First Algorithm":
 		if error != nil {
-			result := searchAlgorithms.StartSearch(1, scannedMatrix) // Call the dummy algorithm
-			var mappedCoordinates [][]int
-			for _, coord := range result.pathFound {
-				mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
-			}
-			newPath = mappedCoordinates
-			g.nodesExpanded = result.expandenNodes
-			g.treeDepth = result.treeDepth
-			g.solutionCost = 3
+			break
 		}
+		result := searchAlgorithms.StartSearch(1, scannedMatrix) // Call the dummy algorithm
+		var mappedCoordinates [][]int
+		for _, coord := range result.PathFound {
+			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
+		}
+		newPath = mappedCoordinates
+		g.nodesExpanded = result.ExpandenNodes
+		g.treeDepth = result.TreeDepth
+		g.solutionCost = 3
 	default:
 		newPath = [][]int{} // Initialize with an empty slice for other cases
 	}
