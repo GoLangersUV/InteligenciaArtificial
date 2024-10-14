@@ -246,10 +246,10 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 			pathToGoal = reconstructPath(parentNodes, currentStep)
 
 			// Combine the two paths: initial -> passenger + passenger -> goal
-			combinedPath := append(pathToPassenger, pathToGoal...)
-
+			combinedPath := append(pathToPassenger[1:], pathToGoal[1:]...)
 			var cost float32
 			for step := range combinedPath {
+				fmt.Println(getCellCost(e.board[combinedPath[step].X][combinedPath[step].Y]))
 				cost += float32(getCellCost(e.board[combinedPath[step].X][combinedPath[step].Y]))
 			}
 
