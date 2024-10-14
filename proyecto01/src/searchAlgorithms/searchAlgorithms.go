@@ -17,6 +17,49 @@ const (
 	GOAL
 )
 
+type Node struct {
+	Position             Position
+	Parent               *Node
+	G                    float32 // Costo desde el inicio hasta el nodo actual
+	H                    float32 // Costo heurístico al objetivo
+	F                    float32 // Costo total (F = G + H)
+	Depth                int
+	HasPickedUpPassenger bool
+}
+
+type PriorityQueue struct {
+	nodes   []*Node
+	compare func(a, b *Node) bool
+}
+
+func (pq PriorityQueue) Len() int { return len(pq.nodes) }
+
+func (pq PriorityQueue) Less(i, j int) bool {
+	return pq.compare(pq.nodes[i], pq.nodes[j])
+}
+
+type State struct {
+	Position             Position
+	HasPickedUpPassenger bool
+}
+
+func (pq PriorityQueue) Swap(i, j int) {
+	pq.nodes[i], pq.nodes[j] = pq.nodes[j], pq.nodes[i]
+}
+
+func (pq *PriorityQueue) Push(x interface{}) {
+	node := x.(*Node)
+	pq.nodes = append(pq.nodes, node)
+}
+
+func (pq *PriorityQueue) Pop() interface{} {
+	old := pq.nodes
+	n := len(old)
+	node := old[n-1]
+	pq.nodes = old[0 : n-1]
+	return node
+}
+
 // Position representa una posición en la matriz.
 type Position struct {
 	X, Y int
@@ -138,19 +181,6 @@ type BreadthFirstSearch struct{}
 type UniformCostSearch struct{}
 
 type DepthSearch struct{}
-
-type Predicate[T any] func(T) bool
-
-// Generic Find function that takes a slice of any type and a predicate
-func Find[T any](slice []T, predicate Predicate[T]) (T, bool) {
-	for _, value := range slice {
-		if predicate(value) {
-			return value, true // Return the index if the predicate is true
-		}
-	}
-	var zeroValue T
-	return zeroValue, false // Return -1 if no element satisfies the predicate
-}
 
 func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 	var parentNodes []datatypes.AgentStep
@@ -381,10 +411,6 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardC
 	return []datatypes.BoardCoordinate{} // No path found to goal
 }
 
-func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
-	return datatypes.SearchResult{}
-}
-
 func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.SearchResult {
 
 	var searchStrategy SearchAgorithm
@@ -394,10 +420,13 @@ func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.
 		searchStrategy = &BreadthFirstSearch{}
 	case 2:
 		searchStrategy = &UniformCostSearch{}
+	case 3:
+		searchStrategy = &DepthSearch{}
 	case 4:
 		searchStrategy = &BreadthFirstSearch{}
 	default:
 		fmt.Println("Unknown strategy")
+		return datatypes.SearchResult{}
 	}
 
 	initialPosition, exists := scannedMatrix.MainCoordinates["init"]
@@ -425,16 +454,10 @@ func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.
 		)
 		return result
 	} else {
-
+		fmt.Println("Initial position not found")
+		return datatypes.SearchResult{}
 	}
 	return datatypes.SearchResult{}
-}
-
-func checkCellWeight(value int, goalValue int) int {
-	if value != goalValue && value != 2 && value != 0 {
-		return value
-	}
-	return 1
 }
 
 // SearchResult encapsula los resultados de una búsqueda.

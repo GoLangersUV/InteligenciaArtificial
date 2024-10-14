@@ -65,28 +65,138 @@ func GetMatrix(path string) (datatypes.ScannedMatrix, error) {
 }
 
 func FromPosToPath(path []Position) [][]int {
-    result := make([][]int, len(path))
-    for i, pos := range path {
-        result[i] = []int{pos.X, pos.Y}
-    }
-    return result
+	result := make([][]int, len(path))
+	for i, pos := range path {
+		result[i] = []int{pos.X, pos.Y}
+	}
+	return result
 }
 
 func ValidateMatrix(matrix [][]int) ([10][10]int, error) {
-    var result [10][10]int
+	var result [10][10]int
 
-    if len(matrix) != 10 {
-        return result, fmt.Errorf("La matriz debe tener 10 filas, pero tiene %d", len(matrix))
-    }
+	if len(matrix) != 10 {
+		return result, fmt.Errorf("La matriz debe tener 10 filas, pero tiene %d", len(matrix))
+	}
 
-    for i := 0; i < 10; i++ {
-        if len(matrix[i]) != 10 {
-            return result, fmt.Errorf("La fila %d debe tener 10 columnas, pero tiene %d", i, len(matrix[i]))
-        }
-        for j := 0; j < 10; j++ {
-            result[i][j] = matrix[i][j]
-        }
-    }
+	for i := 0; i < 10; i++ {
+		if len(matrix[i]) != 10 {
+			return result, fmt.Errorf("La fila %d debe tener 10 columnas, pero tiene %d", i, len(matrix[i]))
+		}
+		for j := 0; j < 10; j++ {
+			result[i][j] = matrix[i][j]
+		}
+	}
 
-    return result, nil
+	return result, nil
+}
+
+func manhattanDistance(a, b Position) float32 {
+	return float32(abs(a.X-b.X) + abs(a.Y-b.Y))
+}
+
+func abs(a int) int {
+	if a < 0 {
+		return -a
+	}
+	return a
+}
+
+func heuristic(node *Node, env *Environment) float32 {
+	minCost := float32(1)
+	if node.HasPickedUpPassenger {
+		return minCost * manhattanDistance(node.Position, env.GoalPosition)
+	} else {
+		toPassenger := manhattanDistance(node.Position, env.DogPosition)
+		passengerToGoal := manhattanDistance(env.DogPosition, env.GoalPosition)
+		return minCost * (toPassenger + passengerToGoal)
+	}
+}
+
+func reconstructPathI(node *Node) []Position {
+	var path []Position
+	current := node
+	for current != nil {
+		path = append([]Position{current.Position}, path...)
+		current = current.Parent
+	}
+	return path
+}
+
+func getSuccessors(node *Node, env *Environment, useGCost bool) []*Node {
+	var successors []*Node
+
+	directions := []struct {
+		dx, dy int
+	}{
+		{-1, 0}, // Arriba
+		{0, 1},  // Derecha
+		{1, 0},  // Abajo
+		{0, -1}, // Izquierda
+	}
+
+	for _, dir := range directions {
+		newX := node.Position.X + dir.dx
+		newY := node.Position.Y + dir.dy
+
+		if newX >= 0 && newX < 10 && newY >= 0 && newY < 10 {
+			cellValue := env.Matrix[newX][newY]
+			if cellValue != WALL {
+				cost := getCellCost(cellValue)
+
+				hasPickedUpPassenger := node.HasPickedUpPassenger
+				if !hasPickedUpPassenger && (newX == env.DogPosition.X && newY == env.DogPosition.Y) {
+					hasPickedUpPassenger = true
+				}
+
+				newNode := &Node{
+					Position:             Position{X: newX, Y: newY},
+					Parent:               node,
+					Depth:                node.Depth + 1,
+					HasPickedUpPassenger: hasPickedUpPassenger,
+				}
+				newNode.H = heuristic(newNode, env)
+				newNode.G = node.G + cost
+
+				if useGCost {
+					newNode.F = newNode.G + newNode.H
+				}
+
+				successors = append(successors, newNode)
+			}
+		}
+	}
+
+	return successors
+}
+
+func getCellCost(cellValue int) float32 {
+	switch cellValue {
+	case 0: // Tráfico liviano
+		return 1
+	case MIDCOST: // Tráfico medio
+		return 4
+	case HEAVYCOST: // Tráfico pesado
+		return 7
+	default:
+		return 1 // Default cost for other types
+	}
+}
+
+func checkCellWeight(value int, goalValue int) int {
+	if value != goalValue && value != 2 && value != 0 {
+		return value
+	}
+	return 1
+}
+
+// Generic Find function that takes a slice of any type and a predicate
+func Find[T any](slice []T, predicate datatypes.Predicate[T]) (T, bool) {
+	for _, value := range slice {
+		if predicate(value) {
+			return value, true // Return the index if the predicate is true
+		}
+	}
+	var zeroValue T
+	return zeroValue, false // Return -1 if no element satisfies the predicate
 }

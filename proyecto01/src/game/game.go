@@ -72,8 +72,8 @@ const (
 )
 
 var (
-	informedAlgorithms   []string = []string{"dummyAlgorithm", "AStar"}
-	uninformedAlgorithms []string = []string{"Breadth First Algorithm", "Uniform Cost Search"}
+	informedAlgorithms   []string = []string{"Avaro", "A*"}
+	uninformedAlgorithms []string = []string{"Breadth First Algorithm", "DepthSearch", "Uniform Cost Search"}
 )
 
 var Matrix datatypes.ScannedMatrix
@@ -536,8 +536,7 @@ func (g *Game) SetCarPath(algorithmKey string) {
 	case "Breadth First Algorithm":
 		result := searchAlgorithms.StartSearch(1, Matrix)
 		processResultFunc(result)
-	case "AStar":
-
+	case "A*":
 		envMatrix, _ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
 		env, err := searchAlgorithms.NewEnvironment(envMatrix)
 		if err != nil {
@@ -551,6 +550,23 @@ func (g *Game) SetCarPath(algorithmKey string) {
 		g.nodesExpanded = result.ExpandedNodes
 		g.treeDepth = result.TreeDepth
 		g.solutionCost = float64(result.Cost)
+	case "Avaro":
+		envMatrix, _ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
+		env, err := searchAlgorithms.NewEnvironment(envMatrix)
+		if err != nil {
+			log.Fatalf("Error creating environment: %v", err)
+		}
+		miserSearch := new(searchAlgorithms.MiserSearch)
+		agent := searchAlgorithms.NewAgent(env.InitPosition, miserSearch)
+		result := agent.SearchAlgorithm.LookForGoal(env)
+		newPath = searchAlgorithms.FromPosToPath(result.Path)
+		g.nodesExpanded = result.ExpandedNodes
+		g.treeDepth = result.TreeDepth
+		g.solutionCost = float64(result.Cost)
+
+	case "DepthSearch":
+		result := searchAlgorithms.StartSearch(3, Matrix)
+		processResultFunc(result)
 
 	case "Uniform Cost Search":
 		result := searchAlgorithms.StartSearch(2, Matrix) // Call the dummy algorithm
