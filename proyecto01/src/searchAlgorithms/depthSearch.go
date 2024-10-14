@@ -7,8 +7,6 @@ import (
 	"github.com/Krud3/InteligenciaArtificial/src/datatypes"
 )
 
-type DepthSearch struct{}
-
 func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 	var stack []datatypes.AgentStep
 	var visited = make(map[datatypes.BoardCoordinate]bool)

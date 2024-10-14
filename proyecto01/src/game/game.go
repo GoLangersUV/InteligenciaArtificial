@@ -73,7 +73,7 @@ const (
 
 var (
 	informedAlgorithms   []string = []string{"Avaro", "A*"}
-	uninformedAlgorithms []string = []string{"Breadth First Algorithm", "DepthSearch"}
+	uninformedAlgorithms []string = []string{"Breadth First Algorithm", "DepthSearch", "Uniform Cost Search"}
 )
 
 var Matrix datatypes.ScannedMatrix
@@ -520,17 +520,22 @@ func (g *Game) ListMatrixFiles() []string {
 func (g *Game) SetCarPath(algorithmKey string) {
 	var newPath [][]int // Declare newPath outside the conditional block
 	startTime := time.Now()
-	switch algorithmKey {
-	case "Breadth First Algorithm":
-		result := searchAlgorithms.StartSearch(1, Matrix) // Call the dummy algorithm
+
+	processResultFunc := func(results datatypes.SearchResult) {
 		var mappedCoordinates [][]int
-		for _, coord := range result.PathFound {
+		for _, coord := range results.PathFound {
 			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
 		}
 		newPath = mappedCoordinates
-		g.nodesExpanded = result.ExpandenNodes
-		g.treeDepth = result.TreeDepth
-		g.solutionCost = 3
+		g.nodesExpanded = results.ExpandenNodes
+		g.treeDepth = results.TreeDepth
+		g.solutionCost = float64(results.Cost)
+	}
+
+	switch algorithmKey {
+	case "Breadth First Algorithm":
+		result := searchAlgorithms.StartSearch(1, Matrix)
+		processResultFunc(result)
 	case "A*":
 		envMatrix, _ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
 		env, err := searchAlgorithms.NewEnvironment(envMatrix)
@@ -560,26 +565,12 @@ func (g *Game) SetCarPath(algorithmKey string) {
 		g.solutionCost = float64(result.Cost)
 
 	case "DepthSearch":
-
 		result := searchAlgorithms.StartSearch(3, Matrix)
-		//if result.SolutionFound {
-		//	fmt.Println("Camino encontrado:")
-		//	for i, position := range result.PathFound {
-		//		fmt.Printf("Paso %d: [%d, %d]\n", i, position.X, position.Y)
-		//	}
-		//	fmt.Printf("Costo total del camino: %.2f\n", result.Cost)
-		//} else {
-		//	fmt.Println("No se encontró una solución.")
-		//}
-		var mappedCoordinates [][]int
-		for _, coord := range result.PathFound {
-			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
-		}
-		newPath = mappedCoordinates
-		g.nodesExpanded = result.ExpandenNodes
-		g.treeDepth = result.TreeDepth
-		g.solutionCost = float64(result.Cost)
+		processResultFunc(result)
 
+	case "Uniform Cost Search":
+		result := searchAlgorithms.StartSearch(2, Matrix) // Call the dummy algorithm
+		processResultFunc(result)
 	default:
 		newPath = [][]int{} // Initialize with an empty slice for other cases
 	}
