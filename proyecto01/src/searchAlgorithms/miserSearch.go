@@ -5,13 +5,13 @@ import (
   "time"
 )
 
-type AStarSearch struct{}
+type MiserSearch struct{}
 
-func (a *AStarSearch) LookForGoal(env *Environment) SearchResult {
+func (m *MiserSearch) LookForGoal(env *Environment) SearchResult {
   startTime := time.Now()
 
   compare := func(a, b *Node) bool {
-    return a.F < b.F
+    return a.H < b.H
   }
 
   openList := &PriorityQueue{compare: compare}
@@ -22,7 +22,6 @@ func (a *AStarSearch) LookForGoal(env *Environment) SearchResult {
     Position:             env.InitPosition,
     G:                    0,
     H:                    heuristic(&Node{Position: env.InitPosition}, env),
-    F:                    0 + heuristic(&Node{Position: env.InitPosition}, env),
     Depth:                0,
     HasPickedUpPassenger: false,
   }
@@ -58,9 +57,12 @@ func (a *AStarSearch) LookForGoal(env *Environment) SearchResult {
       Position:             currentNode.Position,
       HasPickedUpPassenger: currentNode.HasPickedUpPassenger,
     }
+    if closedList[state] {
+      continue
+    }
     closedList[state] = true
 
-    successors := getSuccessors(currentNode, env, true)
+    successors := getSuccessors(currentNode, env, false) 
 
     for _, successor := range successors {
       state := State{
