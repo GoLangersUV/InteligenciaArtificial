@@ -13,6 +13,7 @@ const (
 type AgentStep struct {
 	Action           AgentAction
 	Depth            int
+	Cost             int
 	CurrentPosition  BoardCoordinate
 	PreviousPosition BoardCoordinate
 }

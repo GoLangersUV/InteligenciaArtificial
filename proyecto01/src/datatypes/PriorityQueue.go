@@ -33,7 +33,7 @@ func (pq *PriorityQueue[T]) Pop() (T, bool) {
 func (pq *PriorityQueue[T]) heapifyUp(index int) {
 	for index > 0 {
 		parentIndex := (index - 1) / 2
-		if pq.elements[parentIndex].Priority >= pq.elements[index].Priority {
+		if pq.elements[parentIndex].Priority <= pq.elements[index].Priority {
 			break
 		}
 		pq.elements[parentIndex], pq.elements[index] = pq.elements[index], pq.elements[parentIndex]
@@ -45,18 +45,18 @@ func (pq *PriorityQueue[T]) heapifyDown(index int) {
 	for {
 		leftChildIndex := 2*index + 1
 		rightChildIndex := 2*index + 2
-		largest := index
-		if leftChildIndex < len(pq.elements) && pq.elements[leftChildIndex].Priority > pq.elements[largest].Priority {
-			largest = leftChildIndex
+		smallest := index
+		if leftChildIndex < len(pq.elements) && pq.elements[leftChildIndex].Priority < pq.elements[smallest].Priority {
+			smallest = leftChildIndex
 		}
-		if rightChildIndex < len(pq.elements) && pq.elements[rightChildIndex].Priority > pq.elements[largest].Priority {
-			largest = rightChildIndex
+		if rightChildIndex < len(pq.elements) && pq.elements[rightChildIndex].Priority < pq.elements[smallest].Priority {
+			smallest = rightChildIndex
 		}
-		if largest == index {
+		if smallest == index {
 			break
 		}
-		pq.elements[largest], pq.elements[index] = pq.elements[index], pq.elements[largest]
-		index = largest
+		pq.elements[smallest], pq.elements[index] = pq.elements[index], pq.elements[smallest]
+		index = smallest
 	}
 }
 

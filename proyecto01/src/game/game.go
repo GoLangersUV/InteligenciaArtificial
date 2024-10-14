@@ -556,7 +556,7 @@ func (g *Game) SetCarPath(algorithmKey string) {
 		newPath = mappedCoordinates
 		g.nodesExpanded = result.ExpandenNodes
 		g.treeDepth = result.TreeDepth
-		g.solutionCost = 3
+		g.solutionCost = float64(result.Cost)
 	default:
 		newPath = [][]int{} // Initialize with an empty slice for other cases
 	}
