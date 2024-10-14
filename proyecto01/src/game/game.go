@@ -520,17 +520,22 @@ func (g *Game) ListMatrixFiles() []string {
 func (g *Game) SetCarPath(algorithmKey string) {
 	var newPath [][]int // Declare newPath outside the conditional block
 	startTime := time.Now()
-	switch algorithmKey {
-	case "Breadth First Algorithm":
-		result := searchAlgorithms.StartSearch(1, Matrix)
+
+	processResultFunc := func(results datatypes.SearchResult) {
 		var mappedCoordinates [][]int
-		for _, coord := range result.PathFound {
+		for _, coord := range results.PathFound {
 			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
 		}
 		newPath = mappedCoordinates
-		g.nodesExpanded = result.ExpandenNodes
-		g.treeDepth = result.TreeDepth
-		g.solutionCost = 3
+		g.nodesExpanded = results.ExpandenNodes
+		g.treeDepth = results.TreeDepth
+		g.solutionCost = float64(results.Cost)
+	}
+
+	switch algorithmKey {
+	case "Breadth First Algorithm":
+		result := searchAlgorithms.StartSearch(1, Matrix)
+		processResultFunc(result)
 	case "AStar":
 
 		envMatrix, _ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
@@ -549,14 +554,7 @@ func (g *Game) SetCarPath(algorithmKey string) {
 
 	case "Uniform Cost Search":
 		result := searchAlgorithms.StartSearch(2, Matrix) // Call the dummy algorithm
-		var mappedCoordinates [][]int
-		for _, coord := range result.PathFound {
-			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
-		}
-		newPath = mappedCoordinates
-		g.nodesExpanded = result.ExpandenNodes
-		g.treeDepth = result.TreeDepth
-		g.solutionCost = float64(result.Cost)
+		processResultFunc(result)
 	default:
 		newPath = [][]int{} // Initialize with an empty slice for other cases
 	}

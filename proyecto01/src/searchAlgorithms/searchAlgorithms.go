@@ -91,10 +91,9 @@ type SearchAgorithm interface {
 
 // agent represents the agent that is going to move in the enviroment
 type agent struct {
-	position          datatypes.AgentStep
-	passenger         bool
-	searchAlgorithm   SearchAgorithm
-	ambientPerception [4]int
+	position        datatypes.AgentStep
+	passenger       bool
+	searchAlgorithm SearchAgorithm
 }
 
 var contiguousMovements = [4]datatypes.CoordinateMovement{
@@ -131,7 +130,6 @@ func Percept(a agent, board [][]int) []datatypes.CoordinateMovement {
 			})
 		}
 	}
-	fmt.Println("Can move: %s", canMove)
 	return canMove
 }
 
@@ -194,8 +192,6 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 			// Reconstruct path from the initial position to the passenger
 			pathToPassenger = reconstructPath(parentNodes, currentStep)
 
-			fmt.Println("Path to passenger: %s", pathToPassenger)
-			fmt.Println("Nodes a Passenger: %s", parentNodes)
 			// Clear the queue and start BFS again from the passenger's position
 			queue.Clear()
 			parentNodes = nil // Clear parent nodes for the next phase
@@ -249,8 +245,6 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 			}
 		}
 	}
-
-	fmt.Println("No solution found")
 	return datatypes.SearchResult{}
 }
 
@@ -277,7 +271,6 @@ func reconstructPath(parentNodes []datatypes.AgentStep, endStep datatypes.AgentS
 		previousStep, found := Find(parentNodes, func(step datatypes.AgentStep) bool {
 			return step.CurrentPosition == currentStep.PreviousPosition
 		})
-		fmt.Println("Found: ", previousStep, found)
 		if found {
 			currentStep = previousStep
 		} else {
@@ -290,7 +283,6 @@ func reconstructPath(parentNodes []datatypes.AgentStep, endStep datatypes.AgentS
 func (a *UniformCostSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 	// Step 1: Find the path to the passenger
 	pathToPassenger := a.findPath(e, 5)
-	fmt.Println("Path to passenger: %s", pathToPassenger)
 	// If the path to the passenger is not found, return empty result
 	if len(pathToPassenger) == 0 {
 		return datatypes.SearchResult{
@@ -302,7 +294,6 @@ func (a *UniformCostSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 			TimeExe:       0,
 		}
 	}
-
 	// Step 2: Find the path from the passenger to the goal
 	pathToGoal := a.findPath(e, 6)
 
@@ -336,7 +327,6 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardC
 	var parentNodes []datatypes.AgentStep // Holds parent nodes
 	expandenNodes := 0
 	priorityQueue := datatypes.PriorityQueue[datatypes.AgentStep]{}
-	fmt.Println("Finding path from start to goal", e.agent.position.CurrentPosition, e.agent.position.PreviousPosition)
 	// The expanded nodes at any given time
 	priorityQueue.Push(datatypes.Element[datatypes.AgentStep]{
 
@@ -357,7 +347,6 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardC
 		currentStep, _ := priorityQueue.Pop()
 		// Check if the current position is the goal
 		if e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == goal {
-			fmt.Println("Found final goal!")
 			e.agent.position = currentStep
 			return reconstructPath(parentNodes, currentStep) // Implement this function to trace back the path
 		}
@@ -367,14 +356,12 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardC
 
 		e.agent.position = currentStep
 		agentPerception := Percept(e.agent, e.board)
-		fmt.Println("Parent Nodes: ", parentNodes)
 
 		for _, perception := range agentPerception {
 			_, isContained := Find(parentNodes, func(agent datatypes.AgentStep) bool {
 				return agent.CurrentPosition == perception.Coordinate
 			})
 			if !isContained {
-				fmt.Println("Pushing: ", perception)
 				movementCost := currentStep.Cost + checkCellWeight(e.board[perception.Coordinate.X][perception.Coordinate.Y], goal)
 				priorityQueue.Push(
 					datatypes.Element[datatypes.AgentStep]{
@@ -390,8 +377,6 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) []datatypes.BoardC
 				)
 			}
 		}
-		fmt.Println("Priority Queue: ", priorityQueue)
-		//time.Sleep(10 * time.Millisecond)
 	}
 	return []datatypes.BoardCoordinate{} // No path found to goal
 }
@@ -431,7 +416,6 @@ func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.
 			initialStep,
 			false,
 			searchStrategy,
-			[4]int{},
 		}
 		result := agent.searchAlgorithm.LookForGoal(&enviroment{
 			agent,
