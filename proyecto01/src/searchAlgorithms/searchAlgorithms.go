@@ -69,10 +69,10 @@ type Position struct {
 
 // Environment representa el entorno donde el agente se moverá.
 type Environment struct {
-	Matrix        *[10][10]int
-	InitPosition  Position
-	DogPosition   Position
-	GoalPosition  Position
+	Matrix       *[10][10]int
+	InitPosition Position
+	DogPosition  Position
+	GoalPosition Position
 }
 
 // NewEnvironment crea un nuevo entorno a partir de una matriz.
@@ -150,9 +150,10 @@ func DummyAlgorithm() [][]int {
 		{3, 9},
 		{4, 9},
 		{5, 9},
-  }
-  return carPath
+	}
+	return carPath
 }
+
 // enviroment represents the enviroment where the agent is going to move
 type enviroment struct {
 	agent             agent
@@ -208,15 +209,13 @@ func Percept(a agent, board [][]int) []datatypes.CoordinateMovement {
 			})
 		}
 	}
-	fmt.Println("Can move: %s", canMove)
+	//fmt.Println("Can move: %s", canMove)
 	return canMove
 }
 
 type BreadthFirstSearch struct{}
 
 type UniformCostSearch struct{}
-
-type DepthSearch struct{}
 
 func removeDuplicates(slice []datatypes.BoardCoordinate) []datatypes.BoardCoordinate {
 	// Create a map to track seen items
@@ -413,10 +412,6 @@ func (a *UniformCostSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 	return datatypes.SearchResult{}
 }
 
-func (a *DepthSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
-	return datatypes.SearchResult{}
-}
-
 func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.SearchResult {
 
 	var searchStrategy SearchAgorithm
@@ -426,6 +421,8 @@ func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.
 		searchStrategy = &BreadthFirstSearch{}
 	case 2:
 		searchStrategy = &UniformCostSearch{}
+	case 3:
+		searchStrategy = &DepthSearch{}
 	case 4:
 		searchStrategy = &BreadthFirstSearch{}
 	default:
@@ -461,6 +458,7 @@ func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.
 	}
 	return datatypes.SearchResult{}
 }
+
 // SearchResult encapsula los resultados de una búsqueda.
 type SearchResult struct {
 	SolutionFound bool

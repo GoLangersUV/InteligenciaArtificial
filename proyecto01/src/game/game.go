@@ -73,13 +73,13 @@ const (
 
 var (
 	informedAlgorithms   []string = []string{"Avaro", "A*"}
-	uninformedAlgorithms []string = []string{"Breadth First Algorithm"}
+	uninformedAlgorithms []string = []string{"Breadth First Algorithm", "DepthSearch"}
 )
 
 var Matrix datatypes.ScannedMatrix
 
 func NewGame(matrixFileName string) (*Game, error) {
-  Matrix, _ = utils.GetMatrix(matrixFileName)
+	Matrix, _ = utils.GetMatrix(matrixFileName)
 
 	// Create the scene
 	scene := NewScene(Matrix.Matrix)
@@ -553,6 +553,27 @@ func (g *Game) SetCarPath(algorithmKey string) {
     }
     miserSearch := new(searchAlgorithms.MiserSearch)
     agent := searchAlgorithms.NewAgent(env.InitPosition, miserSearch)
+    
+	case "DepthSearch":
+
+		result := searchAlgorithms.StartSearch(3, Matrix)
+		//if result.SolutionFound {
+		//	fmt.Println("Camino encontrado:")
+		//	for i, position := range result.PathFound {
+		//		fmt.Printf("Paso %d: [%d, %d]\n", i, position.X, position.Y)
+		//	}
+		//	fmt.Printf("Costo total del camino: %.2f\n", result.Cost)
+		//} else {
+		//	fmt.Println("No se encontró una solución.")
+		//}
+		var mappedCoordinates [][]int
+		for _, coord := range result.PathFound {
+			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
+		}
+		newPath = mappedCoordinates
+		g.nodesExpanded = result.ExpandenNodes
+		g.treeDepth = result.TreeDepth
+		g.solutionCost = float64(result.Cost)
 
     result := agent.SearchAlgorithm.LookForGoal(env)
     newPath = searchAlgorithms.FromPosToPath(result.Path)
