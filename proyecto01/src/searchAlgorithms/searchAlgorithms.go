@@ -246,14 +246,19 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 			pathToGoal = reconstructPath(parentNodes, currentStep)
 
 			// Combine the two paths: initial -> passenger + passenger -> goal
-			combinedPath := append(pathToPassenger, pathToGoal...)
+			combinedPath := append(pathToPassenger[1:], pathToGoal[1:]...)
+			var cost float32
+			for step := range combinedPath {
+				fmt.Println(getCellCost(e.board[combinedPath[step].X][combinedPath[step].Y]))
+				cost += float32(getCellCost(e.board[combinedPath[step].X][combinedPath[step].Y]))
+			}
 
 			return datatypes.SearchResult{
 				PathFound:     combinedPath,
 				SolutionFound: true,
 				ExpandenNodes: expandenNodes,
 				TreeDepth:     len(combinedPath),
-				Cost:          1.333, // Example cost, you can modify it as needed
+				Cost:          float32(cost), // Example cost, you can modify it as needed
 				TimeExe:       end.Sub(start),
 			}
 		}
@@ -263,6 +268,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 		agentPerception := Percept(e.agent, e.board)
 		expandenNodes++
 		for _, perception := range agentPerception {
+			cost := currentStep.Cost + int(getCellCost(e.board[perception.Coordinate.X][perception.Coordinate.Y]))
 			if (perception.Coordinate.X != currentStep.PreviousPosition.X) || (perception.Coordinate.Y != currentStep.PreviousPosition.Y) {
 				queue.Enqueue(
 					datatypes.AgentStep{
@@ -270,6 +276,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 						Depth:            currentStep.Depth + 1,
 						CurrentPosition:  perception.Coordinate,
 						PreviousPosition: currentStep.CurrentPosition,
+						Cost:             int(cost),
 					},
 				)
 			}

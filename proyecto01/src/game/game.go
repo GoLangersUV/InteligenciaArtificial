@@ -368,6 +368,7 @@ func (g *Game) UpdateMenu() {
 				selectedFile := g.files[g.selectedFileIndex]
 				g.SetScene("../battery/" + selectedFile)
 				g.state = PlayingState
+				Matrix, _ = utils.GetMatrix("../battery/" + selectedFile)
 				g.SetCarPath(g.algorithms[g.selectedAlgorithmIndex])
 				print("Start Game")
 			}
@@ -590,6 +591,7 @@ func (g *Game) SetCarPath(algorithmKey string) {
 
 func (g *Game) SetScene(fileName string) {
 
+	Matrix, _ = utils.GetMatrix(fileName)
 	// Create the scene
 	g.scene = NewScene(Matrix.Matrix)
 
