@@ -73,13 +73,13 @@ const (
 
 var (
 	informedAlgorithms   []string = []string{"dummyAlgorithm", "AStar"}
-	uninformedAlgorithms []string = []string{"Breadth First Algorithm"}
+	uninformedAlgorithms []string = []string{"Breadth First Algorithm", "Uniform Cost Search"}
 )
 
 var Matrix datatypes.ScannedMatrix
 
 func NewGame(matrixFileName string) (*Game, error) {
-  Matrix, _ = utils.GetMatrix(matrixFileName)
+	Matrix, _ = utils.GetMatrix(matrixFileName)
 
 	// Create the scene
 	scene := NewScene(Matrix.Matrix)
@@ -522,7 +522,7 @@ func (g *Game) SetCarPath(algorithmKey string) {
 	startTime := time.Now()
 	switch algorithmKey {
 	case "Breadth First Algorithm":
-		result := searchAlgorithms.StartSearch(1, Matrix) // Call the dummy algorithm
+		result := searchAlgorithms.StartSearch(1, Matrix)
 		var mappedCoordinates [][]int
 		for _, coord := range result.PathFound {
 			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
@@ -531,22 +531,32 @@ func (g *Game) SetCarPath(algorithmKey string) {
 		g.nodesExpanded = result.ExpandenNodes
 		g.treeDepth = result.TreeDepth
 		g.solutionCost = 3
-  case "AStar":
+	case "AStar":
 
-    envMatrix,_ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
-    env, err := searchAlgorithms.NewEnvironment(envMatrix)
-    if err != nil {
-        log.Fatalf("Error creating environment: %v", err)
-    }
-    aStarSearch := new(searchAlgorithms.AStarSearch)
-    agent := searchAlgorithms.NewAgent(env.InitPosition, aStarSearch)
+		envMatrix, _ := searchAlgorithms.ValidateMatrix(Matrix.Matrix)
+		env, err := searchAlgorithms.NewEnvironment(envMatrix)
+		if err != nil {
+			log.Fatalf("Error creating environment: %v", err)
+		}
+		aStarSearch := new(searchAlgorithms.AStarSearch)
+		agent := searchAlgorithms.NewAgent(env.InitPosition, aStarSearch)
 
-    result := agent.SearchAlgorithm.LookForGoal(env)
-    newPath = searchAlgorithms.FromPosToPath(result.Path)
-    g.nodesExpanded = result.ExpandedNodes
-    g.treeDepth = result.TreeDepth
-    g.solutionCost = float64(result.Cost)
+		result := agent.SearchAlgorithm.LookForGoal(env)
+		newPath = searchAlgorithms.FromPosToPath(result.Path)
+		g.nodesExpanded = result.ExpandedNodes
+		g.treeDepth = result.TreeDepth
+		g.solutionCost = float64(result.Cost)
 
+	case "Uniform Cost Search":
+		result := searchAlgorithms.StartSearch(2, Matrix) // Call the dummy algorithm
+		var mappedCoordinates [][]int
+		for _, coord := range result.PathFound {
+			mappedCoordinates = append(mappedCoordinates, []int{coord.X, coord.Y})
+		}
+		newPath = mappedCoordinates
+		g.nodesExpanded = result.ExpandenNodes
+		g.treeDepth = result.TreeDepth
+		g.solutionCost = 3
 	default:
 		newPath = [][]int{} // Initialize with an empty slice for other cases
 	}
