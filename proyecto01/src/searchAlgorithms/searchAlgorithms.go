@@ -248,12 +248,17 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 			// Combine the two paths: initial -> passenger + passenger -> goal
 			combinedPath := append(pathToPassenger, pathToGoal...)
 
+			var cost float32
+			for step := range combinedPath {
+				cost += float32(getCellCost(e.board[combinedPath[step].X][combinedPath[step].Y]))
+			}
+
 			return datatypes.SearchResult{
 				PathFound:     combinedPath,
 				SolutionFound: true,
 				ExpandenNodes: expandenNodes,
 				TreeDepth:     len(combinedPath),
-				Cost:          1.333, // Example cost, you can modify it as needed
+				Cost:          float32(cost), // Example cost, you can modify it as needed
 				TimeExe:       end.Sub(start),
 			}
 		}
@@ -263,6 +268,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 		agentPerception := Percept(e.agent, e.board)
 		expandenNodes++
 		for _, perception := range agentPerception {
+			cost := currentStep.Cost + int(getCellCost(e.board[perception.Coordinate.X][perception.Coordinate.Y]))
 			if (perception.Coordinate.X != currentStep.PreviousPosition.X) || (perception.Coordinate.Y != currentStep.PreviousPosition.Y) {
 				queue.Enqueue(
 					datatypes.AgentStep{
@@ -270,6 +276,7 @@ func (a *BreadthFirstSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 						Depth:            currentStep.Depth + 1,
 						CurrentPosition:  perception.Coordinate,
 						PreviousPosition: currentStep.CurrentPosition,
+						Cost:             int(cost),
 					},
 				)
 			}
@@ -354,17 +361,18 @@ func (a *UniformCostSearch) LookForGoal(e *enviroment) datatypes.SearchResult {
 }
 
 // Helper function to perform Uniform Cost Search from start to goal
-func (a *UniformCostSearch) findPath(e *enviroment, goal int) ([]datatypes.BoardCoordinate, int, int) {
+func (a *UniformCostSearch) findPath(e *enviroment, goal int) ([]datatypes.BoardCoordinate, int, float32) {
 	var parentNodes []datatypes.AgentStep // Holds parent nodes
 	expandenNodes := 0
 	priorityQueue := datatypes.PriorityQueue[datatypes.AgentStep]{}
-	// The expanded nodes at any given time
-	priorityQueue.Push(datatypes.Element[datatypes.AgentStep]{
 
+	// Start with the initial position and cost 0
+	initialCost := float32(0)
+	priorityQueue.Push(datatypes.Element[datatypes.AgentStep]{
 		Value: datatypes.AgentStep{
 			Depth:  e.agent.position.Depth,
 			Action: e.agent.position.Action,
-			Cost:   e.agent.position.Cost,
+			Cost:   int(initialCost),
 			PreviousPosition: datatypes.BoardCoordinate{
 				X: math.MaxInt,
 				Y: math.MaxInt,
@@ -374,14 +382,22 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) ([]datatypes.Board
 		Priority: 0}, // Priority can be based on cost from start
 	)
 
+	visited := make(map[datatypes.BoardCoordinate]bool)
+
 	for !priorityQueue.IsEmpty() {
 		currentStep, _ := priorityQueue.Pop()
+
 		// Check if the current position is the goal
 		if e.board[currentStep.CurrentPosition.X][currentStep.CurrentPosition.Y] == goal {
 			e.agent.position = currentStep
-			return reconstructPath(parentNodes, currentStep), expandenNodes, currentStep.Cost + 1 // Implement this function to trace back the path
+			return reconstructPath(parentNodes, currentStep), expandenNodes, float32(currentStep.Cost)
 		}
 
+		if visited[currentStep.CurrentPosition] {
+			continue
+		}
+
+		visited[currentStep.CurrentPosition] = true
 		parentNodes = append(parentNodes, currentStep)
 		expandenNodes++
 
@@ -389,27 +405,26 @@ func (a *UniformCostSearch) findPath(e *enviroment, goal int) ([]datatypes.Board
 		agentPerception := Percept(e.agent, e.board)
 
 		for _, perception := range agentPerception {
-			_, isContained := Find(parentNodes, func(agent datatypes.AgentStep) bool {
-				return agent.CurrentPosition == perception.Coordinate
-			})
-			if !isContained {
-				movementCost := currentStep.Cost + checkCellWeight(e.board[perception.Coordinate.X][perception.Coordinate.Y], goal)
+			if !visited[perception.Coordinate] {
+				movementCost := float32(currentStep.Cost) + getCellCost(e.board[perception.Coordinate.X][perception.Coordinate.Y])
 				priorityQueue.Push(
 					datatypes.Element[datatypes.AgentStep]{
 						Value: datatypes.AgentStep{
 							Depth:            currentStep.Depth + 1,
 							Action:           perception.Direction,
-							Cost:             movementCost,
+							Cost:             int(movementCost), // Use the calculated movement cost
 							CurrentPosition:  perception.Coordinate,
 							PreviousPosition: currentStep.CurrentPosition,
 						},
-						Priority: movementCost,
+						Priority: int(movementCost), // Priority is based on the total cost to reach this node
 					},
 				)
 			}
 		}
 	}
-	return []datatypes.BoardCoordinate{}, expandenNodes, e.agent.position.Cost // No path found to goal
+
+	// If no path found, return empty result
+	return []datatypes.BoardCoordinate{}, expandenNodes, 0
 }
 
 func StartSearch(strategy int, scannedMatrix datatypes.ScannedMatrix) datatypes.SearchResult {

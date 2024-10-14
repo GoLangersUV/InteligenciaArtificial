@@ -591,6 +591,7 @@ func (g *Game) SetCarPath(algorithmKey string) {
 func (g *Game) SetScene(fileName string) {
 
 	// Create the scene
+	Matrix, _ = utils.GetMatrix(fileName)
 	g.scene = NewScene(Matrix.Matrix)
 
 	scene := NewScene(Matrix.Matrix)
