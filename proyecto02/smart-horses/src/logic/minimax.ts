@@ -1,56 +1,105 @@
-// src/logic/minimax.ts
-
 import { GameStateManager } from './gameState';
-import { Move } from '../types/game';
+import { Move, Position } from '../types/game';
 
 export class Minimax {
   private evaluationFn: (state: GameStateManager) => number;
   private maxDepth: number;
+  private moveCounter: Map<string, number>;
+  private readonly MAX_REPETITIONS = 2;
 
   constructor(evaluationFn: (state: GameStateManager) => number, maxDepth: number) {
     this.evaluationFn = evaluationFn;
     this.maxDepth = maxDepth;
+    this.moveCounter = new Map<string, number>();
+  }
+
+  private getMoveKey(from: Position, to: Position): string {
+    return `${from.row},${from.col}->${to.row},${to.col}`;
+  }
+
+  private incrementMoveCount(from: Position, to: Position): number {
+    const moveKey = this.getMoveKey(from, to);
+    const currentCount = this.moveCounter.get(moveKey) || 0;
+    this.moveCounter.set(moveKey, currentCount + 1);
+    return currentCount + 1;
+  }
+
+  private getRepetitionCount(from: Position, to: Position): number {
+    const moveKey = this.getMoveKey(from, to);
+    return this.moveCounter.get(moveKey) || 0;
   }
 
   getBestMove(state: GameStateManager): Move {
-        console.log('Getting best move for state:', {
-            currentPlayer: state.currentPlayer,
-            whiteHorse: state.whiteHorse,
-            blackHorse: state.blackHorse
+    console.log('Getting best move for state:', {
+      currentPlayer: state.currentPlayer,
+      whiteHorse: state.whiteHorse,
+      blackHorse: state.blackHorse
+    });
+
+    const currentHorse = state.currentPlayer === 'white' ? state.whiteHorse : state.blackHorse;
+    let possibleMoves = state.getPossibleMoves(currentHorse.position);
+    
+    let validMoves = possibleMoves.filter(to => {
+      const repetitions = this.getRepetitionCount(currentHorse.position, to);
+      return repetitions < this.MAX_REPETITIONS;
+    });
+
+    // Si todos los movimientos se han repetido demasiado, reiniciar contadores y usar todos
+    if (validMoves.length === 0) {
+      console.log('Resetting move counters due to all moves being repeated');
+      this.moveCounter.clear();
+      validMoves = possibleMoves;
+    }
+
+    let bestScore = -Infinity;
+    let bestMove: Move | null = null;
+
+    for (const to of validMoves) {
+      const newState = state.clone();
+      const success = newState.makeMove(currentHorse.position, to);
+      
+      if (success) {
+        const score = this.minimax(newState, this.maxDepth - 1, false, -Infinity, Infinity);
+        
+        const immediatePoints = state.board[to.row][to.col].points || 0;
+        const hasMultiplier = state.board[to.row][to.col].multiplier;
+        const immediateBonus = (immediatePoints * 1000) + (hasMultiplier ? 500 : 0);
+        
+        const finalScore = score + immediateBonus;
+        
+        console.log('Move evaluation:', { 
+          to, 
+          score: finalScore,
+          repetitions: this.getRepetitionCount(currentHorse.position, to)
         });
 
-        const currentHorse = state.currentPlayer === 'white' ? state.whiteHorse : state.blackHorse;
-        const possibleMoves = state.getPossibleMoves(currentHorse.position);
-        
-        console.log('Possible moves:', possibleMoves);
-
-        let bestScore = -Infinity;
-        let bestMove: Move = {
+        if (finalScore > bestScore) {
+          bestScore = finalScore;
+          bestMove = {
             from: currentHorse.position,
-            to: possibleMoves[0]
-        };
-
-        for (const to of possibleMoves) {
-            const newState = state.clone();
-            const success = newState.makeMove(currentHorse.position, to);
-            
-            if (success) {
-                const score = this.minimax(newState, this.maxDepth - 1, false, -Infinity, Infinity);
-                console.log('Move evaluation:', { to, score });
-                
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMove = {
-                        from: currentHorse.position,
-                        to: to
-                    };
-                }
-            }
+            to: to
+          };
         }
-
-        console.log('Selected best move:', bestMove);
-        return bestMove;
+      }
     }
+
+    // Si encontramos un movimiento válido, incrementar su contador
+    if (bestMove) {
+      this.incrementMoveCount(bestMove.from, bestMove.to);
+      console.log('Selected move:', bestMove, 
+        'Times used:', this.getRepetitionCount(bestMove.from, bestMove.to));
+    } else {
+      // Si no encontramos movimiento, usar el primero disponible
+      bestMove = {
+        from: currentHorse.position,
+        to: possibleMoves[0]
+      };
+      console.log('Fallback to first available move:', bestMove);
+    }
+
+    return bestMove;
+  }
+
   private minimax(
     state: GameStateManager,
     depth: number,
@@ -75,9 +124,7 @@ export class Minimax {
           maxEval = Math.max(maxEval, eval_);
           alpha = Math.max(alpha, eval_);
           
-          if (beta <= alpha) {
-            break;
-          }
+          if (beta <= alpha) break;
         }
       }
       
@@ -92,9 +139,7 @@ export class Minimax {
           minEval = Math.min(minEval, eval_);
           beta = Math.min(beta, eval_);
           
-          if (beta <= alpha) {
-            break;
-          }
+          if (beta <= alpha) break;
         }
       }
       
