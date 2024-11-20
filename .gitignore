@@ -23,3 +23,5 @@ go.work.sum
 
 # env file
 .env
+
+proyecto02/smart-horses/node_modules
