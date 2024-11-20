@@ -1,3 +1,4 @@
+// battleSystem.ts
 import { GameStateManager } from '../gameState';
 import { Difficulty } from '../../types/game';
 import { DIFFICULTIES } from '../../constants/gameConstants';
@@ -5,7 +6,16 @@ import { Minimax } from '../minimax';
 import { evaluatePositionAI1 } from './ai1';
 import { evaluatePositionAI2 } from './ai2';
 
-type BattleResult = {
+export type BattleProgress = {
+  totalMatches: number;
+  completedMatches: number;
+  currentMatchup: string;
+  currentAI1Score: number;
+  currentAI2Score: number;
+  phase: 'RUNNING' | 'COMPLETED';
+};
+
+export type BattleResult = {
   ai1Wins: number;
   ai2Wins: number;
   draws: number;
@@ -21,18 +31,49 @@ type MatchResult = {
 
 export class AIBattleSystem {
   private static readonly MATCHES_PER_COMBINATION = 1;
+  // private static readonly TOTAL_COMBINATIONS = 9; // 3x3 combinaciones
+  private static readonly TOTAL_MATCHES = 9; // TOTAL_COMBINATIONS * MATCHES_PER_COMBINATION
 
-  static async runAllBattles(): Promise<Record<string, BattleResult>> {
+  static async runAllBattles(
+    onProgress: (progress: BattleProgress) => void
+  ): Promise<Record<string, BattleResult>> {
     const difficulties: Difficulty[] = ['BEGINNER', 'AMATEUR', 'EXPERT'];
     const results: Record<string, BattleResult> = {};
+    let completedMatches = 0;
 
     for (const ai1Difficulty of difficulties) {
       for (const ai2Difficulty of difficulties) {
+        const currentMatchup = `${ai1Difficulty} vs ${ai2Difficulty}`;
         const key = `${ai1Difficulty}_vs_${ai2Difficulty}`;
-        const result = await this.runBattleSeries(ai1Difficulty, ai2Difficulty);
-        results[key] = result;
         
-        console.log(`Resultados ${ai1Difficulty} vs ${ai2Difficulty}:`);
+        onProgress({
+          totalMatches: this.TOTAL_MATCHES,
+          completedMatches,
+          currentMatchup,
+          currentAI1Score: 0,
+          currentAI2Score: 0,
+          phase: 'RUNNING'
+        });
+
+        const result = await this.runBattleSeries(
+          ai1Difficulty, 
+          ai2Difficulty,
+          (score) => {
+            onProgress({
+              totalMatches: this.TOTAL_MATCHES,
+              completedMatches,
+              currentMatchup,
+              currentAI1Score: score.ai1,
+              currentAI2Score: score.ai2,
+              phase: 'RUNNING'
+            });
+          }
+        );
+
+        results[key] = result;
+        completedMatches++;
+        
+        console.log(`Resultados ${currentMatchup}:`);
         console.log(`AI1 victorias: ${result.ai1Wins}`);
         console.log(`AI2 victorias: ${result.ai2Wins}`);
         console.log(`Empates: ${result.draws}`);
@@ -40,12 +81,22 @@ export class AIBattleSystem {
       }
     }
 
+    onProgress({
+      totalMatches: this.TOTAL_MATCHES,
+      completedMatches,
+      currentMatchup: 'Completado',
+      currentAI1Score: 0,
+      currentAI2Score: 0,
+      phase: 'COMPLETED'
+    });
+
     return results;
   }
 
   private static async runBattleSeries(
     ai1Difficulty: Difficulty,
-    ai2Difficulty: Difficulty
+    ai2Difficulty: Difficulty,
+    onMatchProgress: (score: { ai1: number; ai2: number }) => void
   ): Promise<BattleResult> {
     const result: BattleResult = {
       ai1Wins: 0,
@@ -54,13 +105,16 @@ export class AIBattleSystem {
     };
 
     for (let i = 0; i < this.MATCHES_PER_COMBINATION; i++) {
-      const matchResult = await this.runSingleMatch(ai1Difficulty, ai2Difficulty);
+      const matchResult = await this.runSingleMatch(
+        ai1Difficulty, 
+        ai2Difficulty,
+        onMatchProgress
+      );
       
       if (matchResult.winner === 'AI1') result.ai1Wins++;
       else if (matchResult.winner === 'AI2') result.ai2Wins++;
       else result.draws++;
       
-      // Pequeña pausa para no bloquear el navegador
       await new Promise(resolve => setTimeout(resolve, 0));
     }
 
@@ -69,7 +123,8 @@ export class AIBattleSystem {
 
   private static async runSingleMatch(
     ai1Difficulty: Difficulty,
-    ai2Difficulty: Difficulty
+    ai2Difficulty: Difficulty,
+    onProgress: (score: { ai1: number; ai2: number }) => void
   ): Promise<MatchResult> {
     const gameState = new GameStateManager();
     const ai1 = new Minimax(evaluatePositionAI1, DIFFICULTIES[ai1Difficulty].depth);
@@ -82,6 +137,12 @@ export class AIBattleSystem {
       if (!move) break;
       
       gameState.makeMove(move.from, move.to);
+      
+      onProgress({
+        ai1: gameState.whiteScore,
+        ai2: gameState.blackScore
+      });
+      
       await new Promise(resolve => setTimeout(resolve, 0));
     }
 
@@ -95,7 +156,6 @@ export class AIBattleSystem {
     };
   }
 
-  // Método para generar la tabla de resultados en formato markdown
   static generateResultsTable(results: Record<string, BattleResult>): string {
     let table = '| IA1 vs IA2 | Principiante | Amateur | Experto |\n';
     table += '|------------|--------------|---------|----------|\n';
