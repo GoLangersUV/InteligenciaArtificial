@@ -1,5 +1,6 @@
 import { GameState, Position, Horse, BoardValue } from '../types/game';
-import { BOARD_SIZE, TOTAL_POINTS_SQUARES, TOTAL_MULTIPLIER_SQUARES, POINTS_RANGE, KNIGHT_MOVES } from '../constants/gameConstants';
+import { BOARD_SIZE, TOTAL_POINTS_SQUARES, TOTAL_MULTIPLIER_SQUARES } from '../constants/gameConstants';
+import { GameUtilities } from './utilities';
 
 export class GameStateManager implements GameState {
   board: BoardValue[][];
@@ -22,39 +23,31 @@ export class GameStateManager implements GameState {
   }
 
   initializeRandomBoard(): void {
-    // Limpiar el tablero
+    // Reiniciar el tablero
     this.board = Array(BOARD_SIZE).fill(null).map(() => 
       Array(BOARD_SIZE).fill(null).map(() => ({}))
     );
 
-    const availablePositions: Position[] = [];
-    for (let row = 0; row < BOARD_SIZE; row++) {
-      for (let col = 0; col < BOARD_SIZE; col++) {
-        availablePositions.push({ row, col });
-      }
-    }
-
-    // Función para obtener una posición aleatoria
-    const getRandomPosition = (): Position => {
-      const index = Math.floor(Math.random() * availablePositions.length);
-      return availablePositions.splice(index, 1)[0];
-    };
+    // Obtener posiciones aleatorias únicas para todos los elementos
+    const positions = GameUtilities.getUniqueRandomPositions(
+      TOTAL_POINTS_SQUARES + TOTAL_MULTIPLIER_SQUARES + 2 // +2 para los caballos
+    );
 
     // Colocar puntos
-    for (let i = 1; i <= TOTAL_POINTS_SQUARES; i++) {
-      const pos = getRandomPosition();
-      this.board[pos.row][pos.col].points = i;
+    for (let i = 0; i < TOTAL_POINTS_SQUARES; i++) {
+      const pos = positions[i];
+      this.board[pos.row][pos.col].points = i + 1;
     }
 
     // Colocar multiplicadores
     for (let i = 0; i < TOTAL_MULTIPLIER_SQUARES; i++) {
-      const pos = getRandomPosition();
+      const pos = positions[TOTAL_POINTS_SQUARES + i];
       this.board[pos.row][pos.col].multiplier = true;
     }
 
     // Colocar caballos
-    const whitePos = getRandomPosition();
-    const blackPos = getRandomPosition();
+    const whitePos = positions[positions.length - 2];
+    const blackPos = positions[positions.length - 1];
     
     this.whiteHorse = { position: whitePos, hasMultiplier: false };
     this.blackHorse = { position: blackPos, hasMultiplier: false };
@@ -64,33 +57,34 @@ export class GameStateManager implements GameState {
   }
 
   isValidMove(from: Position, to: Position): boolean {
-    // Verificar si está dentro del tablero
-    if (to.row < 0 || to.row >= BOARD_SIZE || to.col < 0 || to.col >= BOARD_SIZE) {
+    // Verificar si el destino está ocupado por un caballo
+    if (this.board[to.row]?.[to.col]?.horse) {
       return false;
     }
 
-    // Verificar movimiento en L
-    const rowDiff = Math.abs(to.row - from.row);
-    const colDiff = Math.abs(to.col - from.col);
-    return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+    return GameUtilities.isValidKnightMove(from, to);
   }
 
   makeMove(from: Position, to: Position): boolean {
-    if (!this.isValidMove(from, to)) return false;
+    if (!this.isValidMove(from, to)) {
+      return false;
+    }
 
-    const horse = this.currentPlayer === 'white' ? this.whiteHorse : this.blackHorse;
+    const currentHorse = this.currentPlayer === 'white' ? this.whiteHorse : this.blackHorse;
     
-    // Limpiar posición anterior
+    if (from.row !== currentHorse.position.row || from.col !== currentHorse.position.col) {
+      return false;
+    }
+
+    // Realizar el movimiento
     this.board[from.row][from.col].horse = undefined;
-
-    // Mover caballo
-    horse.position = to;
     this.board[to.row][to.col].horse = this.currentPlayer;
+    currentHorse.position = { ...to };
 
-    // Procesar puntos y multiplicadores
+    // Procesar puntos si los hay
     if (this.board[to.row][to.col].points) {
       const points = this.board[to.row][to.col].points!;
-      const multiplier = horse.hasMultiplier ? 2 : 1;
+      const multiplier = currentHorse.hasMultiplier ? 2 : 1;
       
       if (this.currentPlayer === 'white') {
         this.whiteScore += points * multiplier;
@@ -99,16 +93,22 @@ export class GameStateManager implements GameState {
       }
 
       this.board[to.row][to.col].points = undefined;
-      horse.hasMultiplier = false;
+      currentHorse.hasMultiplier = false;
     }
 
-    if (this.board[to.row][to.col].multiplier) {
-      horse.hasMultiplier = true;
+    // Procesar multiplicador
+    if (this.board[to.row][to.col].multiplier && !currentHorse.hasMultiplier) {
+      currentHorse.hasMultiplier = true;
       this.board[to.row][to.col].multiplier = undefined;
     }
 
     this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
     return true;
+  }
+
+  getPossibleMoves(from: Position): Position[] {
+    return GameUtilities.getPossibleMoves(from)
+      .filter(pos => !this.board[pos.row][pos.col].horse);
   }
 
   clone(): GameStateManager {
@@ -122,18 +122,7 @@ export class GameStateManager implements GameState {
     return newState;
   }
 
-  getPossibleMoves(from: Position): Position[] {
-    const moves: Position[] = [];
-    
-    for (const [rowDiff, colDiff] of KNIGHT_MOVES) {
-      const newRow = from.row + rowDiff;
-      const newCol = from.col + colDiff;
-      
-      if (newRow >= 0 && newRow < BOARD_SIZE && newCol >= 0 && newCol < BOARD_SIZE) {
-        moves.push({ row: newRow, col: newCol });
-      }
-    }
-    
-    return moves;
+  hasPointsRemaining(): boolean {
+    return this.board.some(row => row.some(cell => cell.points !== undefined));
   }
 }

@@ -1,100 +1,157 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { GameStateManager } from '../logic/gameState';
 import { Minimax } from '../logic/minimax';
-import { Position, Difficulty, GameState } from '../types/game';
+import { Position, Difficulty } from '../types/game';
 import { DIFFICULTIES } from '../constants/gameConstants';
 import { evaluatePositionAI1 } from '../logic/ai/ai1';
-import { evaluatePositionAI2 } from '../logic/ai/ai2';
 
-interface UseGameReturn {
-  gameState: GameState;
-  isGameOver: boolean;
-  selectedSquare: Position | null;
-  handleSquareClick: (position: Position) => void;
-  resetGame: () => void;
-}
-
-export function useGame(difficulty: Difficulty): UseGameReturn {
+export function useGame(difficulty: Difficulty) {
   const [gameState, setGameState] = useState<GameStateManager>(new GameStateManager());
   const [selectedSquare, setSelectedSquare] = useState<Position | null>(null);
   const [isGameOver, setIsGameOver] = useState(false);
   const [aiThinking, setAiThinking] = useState(false);
-
-  // Inicializar el minimax con la IA seleccionada
+  const isInitialMove = useRef(true);
   const minimax = new Minimax(evaluatePositionAI1, DIFFICULTIES[difficulty].depth);
 
-  // Resetear el juego
-  const resetGame = useCallback(() => {
-    const newGameState = new GameStateManager();
-    setGameState(newGameState);
-    setSelectedSquare(null);
-    setIsGameOver(false);
-  }, []);
-
-  // Verificar si el juego ha terminado
   const checkGameOver = useCallback((state: GameStateManager) => {
-    // El juego termina cuando no quedan casillas con puntos
-    const hasPointsRemaining = state.board.some(row => 
-      row.some(cell => cell.points !== undefined)
-    );
-
-    if (!hasPointsRemaining) {
+    if (!state.hasPointsRemaining()) {
+      console.log('Game Over - No points remaining');
       setIsGameOver(true);
     }
   }, []);
 
-  // Manejar el click en una casilla
+  const makeAIMove = useCallback(async () => {
+    console.log('makeAIMove called with state:', gameState);
+
+    if (gameState.currentPlayer !== 'white' || aiThinking) {
+      console.log('makeAIMove cancelled', { currentPlayer: gameState.currentPlayer, aiThinking });
+      return;
+    }
+    
+    setAiThinking(true);
+    
+    try {
+      const currentState = gameState.clone();
+      const move = minimax.getBestMove(currentState);
+      
+      if (move) {
+        const success = currentState.makeMove(move.from, move.to);
+        
+        if (success) {
+          console.log('AI move successful, updating state');
+          setGameState(currentState);
+          checkGameOver(currentState);
+        }
+      }
+    } catch (error) {
+      console.error('Error in AI move:', error);
+    } finally {
+      setAiThinking(false);
+    }
+}, [gameState, minimax, checkGameOver, aiThinking]);
+
   const handleSquareClick = useCallback((position: Position) => {
-    if (aiThinking || isGameOver || gameState.currentPlayer !== 'black') return;
+    console.log('handleSquareClick', {
+      position,
+      currentPlayer: gameState.currentPlayer,
+      aiThinking,
+      isGameOver,
+      selectedSquare
+    });
+
+    if (aiThinking || isGameOver || gameState.currentPlayer !== 'black') {
+      console.log('Click ignored - invalid state');
+      return;
+    }
 
     if (!selectedSquare) {
-      // Si no hay casilla seleccionada, seleccionar esta si tiene el caballo del jugador
       if (
         position.row === gameState.blackHorse.position.row && 
         position.col === gameState.blackHorse.position.col
       ) {
+        console.log('Black horse selected');
         setSelectedSquare(position);
+      } else {
+        console.log('Invalid selection - not black horse');
       }
     } else {
-      // Si hay casilla seleccionada, intentar mover
+      console.log('Attempting move from', selectedSquare, 'to', position);
       const newGameState = gameState.clone();
-      if (newGameState.makeMove(selectedSquare, position)) {
-        setGameState(newGameState);
-        checkGameOver(newGameState);
+      const moveSuccess = newGameState.makeMove(selectedSquare, position);
+      
+      if (moveSuccess) {
+        console.log('Player move successful');
+        setGameState(newGameState); // Actualizar el estado
         setSelectedSquare(null);
+        checkGameOver(newGameState);
         
-        // Turno de la IA
         if (!isGameOver) {
-          makeAIMove(newGameState);
+          console.log('Scheduling AI move with updated state');
+          setTimeout(() => {
+            setGameState(prevState => {
+              console.log('Current state before AI move:', prevState);
+              const aiState = prevState.clone();
+              const aiMove = minimax.getBestMove(aiState);
+              
+              if (aiMove) {
+                console.log('AI attempting move:', aiMove);
+                const aiMoveSuccess = aiState.makeMove(aiMove.from, aiMove.to);
+                if (aiMoveSuccess) {
+                  console.log('AI move successful');
+                  return aiState;
+                }
+              }
+              return prevState;
+            });
+          }, 500);
         }
       } else {
+        console.log('Invalid move attempted');
         setSelectedSquare(null);
       }
     }
-  }, [gameState, selectedSquare, isGameOver, aiThinking]);
+}, [gameState, selectedSquare, isGameOver, aiThinking, checkGameOver, minimax]);
 
-  // Realizar movimiento de la IA
-  const makeAIMove = useCallback(async (currentState: GameStateManager) => {
-    setAiThinking(true);
-    
-    // Simular un pequeño delay para que el movimiento de la IA no sea instantáneo
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const move = minimax.getBestMove(currentState);
-    if (move) {
-      const newGameState = currentState.clone();
-      newGameState.makeMove(move.from, move.to);
-      setGameState(newGameState);
-      checkGameOver(newGameState);
-    }
-    
-    setAiThinking(false);
-  }, [minimax, checkGameOver]);
-
-  // Efecto para iniciar el juego
   useEffect(() => {
-    resetGame();
+    console.log('Game initialization started');
+    const initGame = () => {
+      const newGameState = new GameStateManager();
+      setGameState(newGameState);
+      setSelectedSquare(null);
+      setIsGameOver(false);
+      setAiThinking(false);
+      isInitialMove.current = true;
+    };
+
+    initGame();
+    console.log('Game initialized');
   }, [difficulty]);
+
+  useEffect(() => {
+    if (isInitialMove.current && gameState.currentPlayer === 'white' && !aiThinking) {
+      console.log('Initiating first AI move');
+      isInitialMove.current = false;
+      new Promise(resolve => setTimeout(resolve, 500))
+        .then(() => {
+          console.log('Executing first AI move');
+          return makeAIMove();
+        })
+        .catch(error => {
+          console.error('Error in first AI move:', error);
+        });
+    }
+  }, [gameState, makeAIMove, aiThinking]);
+
+  const resetGame = useCallback(() => {
+    console.log('Game reset requested');
+    const newGameState = new GameStateManager();
+    setGameState(newGameState);
+    setSelectedSquare(null);
+    setIsGameOver(false);
+    setAiThinking(false);
+    isInitialMove.current = true;
+    console.log('Game reset completed');
+  }, []);
 
   return {
     gameState,
