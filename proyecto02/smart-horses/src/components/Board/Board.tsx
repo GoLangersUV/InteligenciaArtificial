@@ -11,7 +11,7 @@ interface BoardProps {
 
 const Board: React.FC<BoardProps> = ({ gameState, onSquareClick, selectedSquare }) => {
   return (
-    <div className="grid grid-cols-8 w-[640px] h-[640px] mx-auto border-2 border-gray-600">
+    <div className="grid grid-cols-8 w-[720px] h-[720px] mx-auto border-2 border-gray-600">
       {Array(BOARD_SIZE).fill(null).map((_, row) =>
         Array(BOARD_SIZE).fill(null).map((_, col) => (
           <Square

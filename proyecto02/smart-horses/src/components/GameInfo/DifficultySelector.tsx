@@ -19,10 +19,10 @@ const DifficultySelector: React.FC<DifficultySelectorProps> = ({
       <select
         value={difficulty}
         onChange={(e) => onSelect(e.target.value as Difficulty)}
-        className="mt-1 block w-full py-2 px-3 border border-gray-300 
-                   bg-white rounded-md shadow-sm 
-                   focus:outline-none focus:ring-blue-500 focus:border-blue-500
-                   text-black"
+        className="mt-1 block w-full py-2 px-3 border border-gray-400 
+                   bg-gray-800 rounded-lg shadow-sm 
+                   focus:outline-none focus:ring-blue-200 focus:border-blue-200
+                   text-white font-bold"
       >
         {Object.entries(DIFFICULTIES).map(([key, value]) => (
           <option key={key} value={key}>
