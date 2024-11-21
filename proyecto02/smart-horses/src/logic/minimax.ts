@@ -29,22 +29,33 @@ export class Minimax {
     return this.moveCounter.get(moveKey) || 0;
   }
 
-  getBestMove(state: GameStateManager): Move {
+  getBestMove(state: GameStateManager): Move | null {
     console.log('Getting best move for state:', {
       currentPlayer: state.currentPlayer,
       whiteHorse: state.whiteHorse,
       blackHorse: state.blackHorse
     });
 
-    const currentHorse = state.currentPlayer === 'white' ? state.whiteHorse : state.blackHorse;
+    if (state.currentPlayer !== 'black') {
+      console.log('Not AI turn');
+      return null;
+    }
+
+    const currentHorse = state.blackHorse;
     let possibleMoves = state.getPossibleMoves(currentHorse.position);
     
+    console.log('Possible moves:', possibleMoves);
+
+    if (possibleMoves.length === 0) {
+      console.log('No possible moves');
+      return null;
+    }
+
     let validMoves = possibleMoves.filter(to => {
       const repetitions = this.getRepetitionCount(currentHorse.position, to);
       return repetitions < this.MAX_REPETITIONS;
     });
 
-    // Si todos los movimientos se han repetido demasiado, reiniciar contadores y usar todos
     if (validMoves.length === 0) {
       console.log('Resetting move counters due to all moves being repeated');
       this.moveCounter.clear();
@@ -83,13 +94,11 @@ export class Minimax {
       }
     }
 
-    // Si encontramos un movimiento válido, incrementar su contador
     if (bestMove) {
       this.incrementMoveCount(bestMove.from, bestMove.to);
       console.log('Selected move:', bestMove, 
         'Times used:', this.getRepetitionCount(bestMove.from, bestMove.to));
-    } else {
-      // Si no encontramos movimiento, usar el primero disponible
+    } else if (possibleMoves.length > 0) {
       bestMove = {
         from: currentHorse.position,
         to: possibleMoves[0]
@@ -111,10 +120,14 @@ export class Minimax {
       return this.evaluationFn(state);
     }
 
-    const currentHorse = isMaximizing ? state.whiteHorse : state.blackHorse;
+    const currentHorse = isMaximizing ? state.blackHorse : state.whiteHorse;
     const possibleMoves = state.getPossibleMoves(currentHorse.position);
 
-    if (isMaximizing) {
+    if (possibleMoves.length === 0) {
+      return isMaximizing ? -Infinity : Infinity;
+    }
+
+    if (isMaximizing) { 
       let maxEval = -Infinity;
       
       for (const to of possibleMoves) {

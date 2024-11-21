@@ -23,29 +23,24 @@ export class GameStateManager implements GameState {
   }
 
   initializeRandomBoard(): void {
-    // Reiniciar el tablero
     this.board = Array(BOARD_SIZE).fill(null).map(() => 
       Array(BOARD_SIZE).fill(null).map(() => ({}))
     );
 
-    // Obtener posiciones aleatorias únicas para todos los elementos
     const positions = GameUtilities.getUniqueRandomPositions(
       TOTAL_POINTS_SQUARES + TOTAL_MULTIPLIER_SQUARES + 2 // +2 para los caballos
     );
 
-    // Colocar puntos
     for (let i = 0; i < TOTAL_POINTS_SQUARES; i++) {
       const pos = positions[i];
       this.board[pos.row][pos.col].points = i + 1;
     }
 
-    // Colocar multiplicadores
     for (let i = 0; i < TOTAL_MULTIPLIER_SQUARES; i++) {
       const pos = positions[TOTAL_POINTS_SQUARES + i];
       this.board[pos.row][pos.col].multiplier = true;
     }
 
-    // Colocar caballos
     const whitePos = positions[positions.length - 2];
     const blackPos = positions[positions.length - 1];
     
@@ -57,7 +52,6 @@ export class GameStateManager implements GameState {
   }
 
   isValidMove(from: Position, to: Position): boolean {
-    // Verificar si el destino está ocupado por un caballo
     if (this.board[to.row]?.[to.col]?.horse) {
       return false;
     }

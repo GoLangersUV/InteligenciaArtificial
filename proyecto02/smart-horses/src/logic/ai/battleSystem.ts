@@ -1,4 +1,3 @@
-// battleSystem.ts
 import { GameStateManager } from '../gameState';
 import { Difficulty } from '../../types/game';
 import { DIFFICULTIES } from '../../constants/gameConstants';
@@ -30,9 +29,8 @@ type MatchResult = {
 };
 
 export class AIBattleSystem {
-  private static readonly MATCHES_PER_COMBINATION = 1;
-  // private static readonly TOTAL_COMBINATIONS = 9; // 3x3 combinaciones
-  private static readonly TOTAL_MATCHES = 9; // TOTAL_COMBINATIONS * MATCHES_PER_COMBINATION
+  private static readonly MATCHES_PER_COMBINATION = 10;
+  private static readonly TOTAL_MATCHES = 90; // 9 combinaciones x 10 partidas
 
   static async runAllBattles(
     onProgress: (progress: BattleProgress) => void
@@ -61,7 +59,7 @@ export class AIBattleSystem {
           (score) => {
             onProgress({
               totalMatches: this.TOTAL_MATCHES,
-              completedMatches,
+              completedMatches: completedMatches + 1,
               currentMatchup,
               currentAI1Score: score.ai1,
               currentAI2Score: score.ai2,
@@ -71,7 +69,7 @@ export class AIBattleSystem {
         );
 
         results[key] = result;
-        completedMatches++;
+        completedMatches += this.MATCHES_PER_COMBINATION;
         
         console.log(`Resultados ${currentMatchup}:`);
         console.log(`AI1 victorias: ${result.ai1Wins}`);
@@ -131,7 +129,7 @@ export class AIBattleSystem {
     const ai2 = new Minimax(evaluatePositionAI2, DIFFICULTIES[ai2Difficulty].depth);
 
     while (gameState.hasPointsRemaining()) {
-      const currentAI = gameState.currentPlayer === 'white' ? ai1 : ai2;
+      const currentAI = gameState.currentPlayer === 'white' ? ai2 : ai1; // Cambiado para que AI1 use negras
       const move = currentAI.getBestMove(gameState);
       
       if (!move) break;
@@ -139,19 +137,20 @@ export class AIBattleSystem {
       gameState.makeMove(move.from, move.to);
       
       onProgress({
-        ai1: gameState.whiteScore,
-        ai2: gameState.blackScore
+        ai1: gameState.blackScore, // Cambiado para reflejar que AI1 usa negras
+        ai2: gameState.whiteScore  // Cambiado para reflejar que AI2 usa blancas
       });
       
       await new Promise(resolve => setTimeout(resolve, 0));
     }
 
     return {
-      winner: gameState.whiteScore > gameState.blackScore ? 'AI1' :
-              gameState.blackScore > gameState.whiteScore ? 'AI2' : 'DRAW',
+      // Invertimos la lógica de evaluación del ganador
+      winner: gameState.blackScore > gameState.whiteScore ? 'AI1' :
+              gameState.whiteScore > gameState.blackScore ? 'AI2' : 'DRAW',
       finalScore: {
-        ai1: gameState.whiteScore,
-        ai2: gameState.blackScore
+        ai1: gameState.blackScore, // AI1 usa negras
+        ai2: gameState.whiteScore  // AI2 usa blancas
       }
     };
   }

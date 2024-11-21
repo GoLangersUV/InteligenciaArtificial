@@ -18,9 +18,9 @@ const Square: React.FC<SquareProps> = ({ position, value, onClick, isSelected })
         aspect-square w-full
         flex items-center justify-center
         relative
-        ${isLightSquare ? 'bg-blue-200' : 'bg-gray-400'}
-        ${isSelected ? 'ring-2 ring-blue-500' : ''}
-        hover:bg-blue-100 cursor-pointer
+        ${isLightSquare ? 'bg-sky-100' : 'bg-sky-300'}
+        ${isSelected ? 'ring-2 ring-green-500 z-10' : ''}
+        hover:bg-green-100 cursor-pointer
         transition-colors
       `}
       onClick={onClick}

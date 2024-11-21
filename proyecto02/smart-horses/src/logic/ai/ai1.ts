@@ -3,10 +3,9 @@ import { GameUtilities } from '../utilities';
 import { Position } from '../../types/game';
 
 export function evaluatePositionAI1(state: GameStateManager): number {
-  const baseScore = state.whiteScore - state.blackScore;
+  const baseScore = state.blackScore - state.whiteScore;
   let positionScore = 0;
   
-  // Cache de distancias para evitar recálculos
   const distanceCache = new Map<string, number>();
   
   const getDistanceFromCache = (from: Position, to: Position): number => {
@@ -17,7 +16,6 @@ export function evaluatePositionAI1(state: GameStateManager): number {
     return distanceCache.get(key)!;
   };
 
-  // Evaluación de puntos y posición
   let totalPointsRemaining = 0;
   let bestPointValue = 0;
   
@@ -28,30 +26,27 @@ export function evaluatePositionAI1(state: GameStateManager): number {
         totalPointsRemaining += points;
         bestPointValue = Math.max(bestPointValue, points);
         
-        const distanceToWhite = getDistanceFromCache(
-          state.whiteHorse.position,
-          { row, col }
-        );
         const distanceToBlack = getDistanceFromCache(
           state.blackHorse.position,
           { row, col }
         );
+        const distanceToWhite = getDistanceFromCache(
+          state.whiteHorse.position,
+          { row, col }
+        );
         
-        // Factor dinámico basado en puntos restantes
         const importanceFactor = points / totalPointsRemaining;
         
-        // Evaluación ponderada de la posición
-        if (distanceToWhite < distanceToBlack) {
+        if (distanceToBlack < distanceToWhite) {
           positionScore += points * (1.5 + importanceFactor);
-        } else if (distanceToWhite > distanceToBlack) {
+        } else if (distanceToBlack > distanceToWhite) {
           positionScore -= points * (1 + importanceFactor);
         }
       }
     }
   }
 
-  // Evaluación de multiplicadores
-  if (!state.whiteHorse.hasMultiplier) {
+  if (!state.blackHorse.hasMultiplier) {
     let nearestMultiplierDistance = Infinity;
     let potentialValue = 0;
     
@@ -59,7 +54,7 @@ export function evaluatePositionAI1(state: GameStateManager): number {
       for (let col = 0; col < 8; col++) {
         if (state.board[row][col].multiplier) {
           const distance = getDistanceFromCache(
-            state.whiteHorse.position,
+            state.blackHorse.position,
             { row, col }
           );
           if (distance < nearestMultiplierDistance) {
@@ -75,11 +70,9 @@ export function evaluatePositionAI1(state: GameStateManager): number {
     }
   }
 
-  // Evaluación de movilidad y control
-  const whiteMoves = state.getPossibleMoves(state.whiteHorse.position);
-  const mobilityScore = whiteMoves.length * 0.2;
+  const blackMoves = state.getPossibleMoves(state.blackHorse.position);
+  const mobilityScore = blackMoves.length * 0.2;
   
-  // Factor de fin de juego
   const endgameFactor = totalPointsRemaining > 0 ? 
     totalPointsRemaining / 55 :
     0.1;
