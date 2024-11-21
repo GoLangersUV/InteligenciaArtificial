@@ -20,17 +20,15 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <GameLayout
-        gameState={gameState}
-        difficulty={difficulty}
-        isGameOver={isGameOver}
-        selectedSquare={selectedSquare}
-        onSquareClick={handleSquareClick}
-        onDifficultyChange={handleDifficultyChange}
-        onReset={resetGame}
-      />
-    </div>
+		  <GameLayout
+			  gameState={gameState}
+			  difficulty={difficulty}
+			  isGameOver={isGameOver}
+			  selectedSquare={selectedSquare}
+			  onSquareClick={handleSquareClick}
+			  onDifficultyChange={handleDifficultyChange}
+			  onReset={resetGame}
+		  />
   );
 }
 
