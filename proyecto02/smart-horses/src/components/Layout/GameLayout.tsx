@@ -66,12 +66,17 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 							  {/* Turno actual */}
 							  <div className="bg-gray-800 rounded-lg p-4">
 								  <p className="text-center font-medium">
-									  Turno: {gameState.currentPlayer === 'white' ? 'IA' : 'Jugador'}
+									  Turno: {gameState.currentPlayer === 'white' ? 'Jugador' : 'IA'}
 								  </p>
 							  </div>
 						  </div>
 						  
 
+            {/* Turno actual */}
+            <p className="text-center font-medium">
+              Turno: {gameState.currentPlayer === 'black' ? 'IA' : 'Jugador'}
+            </p>
+           
 						  {/* Instrucciones */}
 						  <div className="bg-gray-800 text-left rounded-lg p-4 w-1/2 xl:w-full xl:mt-12">
 							  <h3 className="font-bold mb-3">Instrucciones:</h3>
