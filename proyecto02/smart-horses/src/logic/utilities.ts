@@ -1,7 +1,8 @@
-import { Position, BoardValue, GameState } from '../types/game';
+import { Position, Move, BoardValue, GameState } from '../types/game';
 import { BOARD_SIZE, KNIGHT_MOVES } from '../constants/gameConstants';
 
 export class GameUtilities {
+  // Métodos existentes de posición aleatoria
   static getRandomPosition(): Position {
     return {
       row: Math.floor(Math.random() * BOARD_SIZE),
@@ -26,6 +27,7 @@ export class GameUtilities {
     return positions;
   }
 
+  // Métodos de validación de posición
   static isValidPosition(position: Position): boolean {
     return (
       position.row >= 0 &&
@@ -43,6 +45,7 @@ export class GameUtilities {
     return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
   }
 
+  // Métodos de generación y análisis de movimientos
   static getPossibleMoves(from: Position): Position[] {
     return KNIGHT_MOVES
       .map(([rowDiff, colDiff]) => ({
@@ -52,6 +55,25 @@ export class GameUtilities {
       .filter(pos => this.isValidPosition(pos));
   }
 
+  static generateMoves(from: Position): Move[] {
+    const possiblePositions = this.getPossibleMoves(from);
+    return possiblePositions.map(to => ({ from, to }));
+  }
+
+  static sortMovesByProximity(moves: Move[], target: Position): Move[] {
+    return [...moves].sort((a, b) => {
+      const distA = this.getManhattanDistance(a.to, target);
+      const distB = this.getManhattanDistance(b.to, target);
+      return distA - distB;
+    });
+  }
+
+  static generateSortedMoves(from: Position, target: Position): Move[] {
+    const moves = this.generateMoves(from);
+    return this.sortMovesByProximity(moves, target);
+  }
+
+  // Métodos de cálculo de distancia
   static getManhattanDistance(pos1: Position, pos2: Position): number {
     return Math.abs(pos1.row - pos2.row) + Math.abs(pos1.col - pos2.col);
   }
@@ -60,6 +82,7 @@ export class GameUtilities {
     return Math.max(Math.abs(pos1.row - pos2.row), Math.abs(pos1.col - pos2.col));
   }
 
+  // Métodos de análisis del tablero
   static findHighestPointOnBoard(board: BoardValue[][]): { position: Position; points: number } | null {
     let highest = { position: { row: 0, col: 0 }, points: 0 };
     

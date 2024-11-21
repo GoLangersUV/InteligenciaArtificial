@@ -120,40 +120,95 @@ export class AIBattleSystem {
   }
 
   private static async runSingleMatch(
-    ai1Difficulty: Difficulty,
-    ai2Difficulty: Difficulty,
-    onProgress: (score: { ai1: number; ai2: number }) => void
-  ): Promise<MatchResult> {
-    const gameState = new GameStateManager();
-    const ai1 = new Minimax(evaluatePositionAI1, DIFFICULTIES[ai1Difficulty].depth);
-    const ai2 = new Minimax(evaluatePositionAI2, DIFFICULTIES[ai2Difficulty].depth);
+  ai1Difficulty: Difficulty,
+  ai2Difficulty: Difficulty,
+  onProgress: (score: { ai1: number; ai2: number }) => void
+): Promise<MatchResult> {
+  const gameState = new GameStateManager();
+  const ai1 = new Minimax(evaluatePositionAI1, DIFFICULTIES[ai1Difficulty].depth);
+  const ai2 = new Minimax(evaluatePositionAI2, DIFFICULTIES[ai2Difficulty].depth);
 
-    while (gameState.hasPointsRemaining()) {
-      const currentAI = gameState.currentPlayer === 'white' ? ai2 : ai1; // Cambiado para que AI1 use negras
-      const move = currentAI.getBestMove(gameState);
-      
-      if (!move) break;
-      
-      gameState.makeMove(move.from, move.to);
-      
-      onProgress({
-        ai1: gameState.blackScore, // Cambiado para reflejar que AI1 usa negras
-        ai2: gameState.whiteScore  // Cambiado para reflejar que AI2 usa blancas
-      });
-      
-      await new Promise(resolve => setTimeout(resolve, 0));
+  let moveCount = 0;
+  const MAX_MOVES = 100; // Límite de seguridad
+
+  console.log('Iniciando partida:');
+  console.log('Estado inicial:', {
+    whitePos: gameState.whiteHorse.position,
+    blackPos: gameState.blackHorse.position,
+    currentPlayer: gameState.currentPlayer
+  });
+
+  while (gameState.hasPointsRemaining() && moveCount < MAX_MOVES) {
+    moveCount++;
+    
+    // Verificar estado antes del movimiento
+    const preScore = {
+      white: gameState.whiteScore,
+      black: gameState.blackScore
+    };
+
+    // Seleccionar IA según el turno (AI2 blancas, AI1 negras)
+    const isWhiteTurn = gameState.currentPlayer === 'white';
+    const currentAI = isWhiteTurn ? ai2 : ai1;
+    
+    console.log(`\nTurno ${moveCount}:`, 
+      isWhiteTurn ? 'AI2 (blancas)' : 'AI1 (negras)',
+      `Puntuación actual - Blancas: ${preScore.white}, Negras: ${preScore.black}`
+    );
+
+    // Obtener y validar movimiento
+    const move = currentAI.getBestMove(gameState);
+    if (!move) {
+      console.error('No se encontró movimiento válido');
+      break;
     }
 
-    return {
-      // Invertimos la lógica de evaluación del ganador
-      winner: gameState.blackScore > gameState.whiteScore ? 'AI1' :
-              gameState.whiteScore > gameState.blackScore ? 'AI2' : 'DRAW',
-      finalScore: {
-        ai1: gameState.blackScore, // AI1 usa negras
-        ai2: gameState.whiteScore  // AI2 usa blancas
-      }
+    console.log('Movimiento elegido:', move);
+
+    // Realizar movimiento
+    const moveSuccess = gameState.makeMove(move.from, move.to);
+    if (!moveSuccess) {
+      console.error('Movimiento inválido');
+      break;
+    }
+
+    // Verificar si hubo cambio en la puntuación
+    const postScore = {
+      white: gameState.whiteScore,
+      black: gameState.blackScore
     };
+
+    if (postScore.white !== preScore.white || postScore.black !== preScore.black) {
+      console.log('¡Puntos capturados!', {
+        whiteDelta: postScore.white - preScore.white,
+        blackDelta: postScore.black - preScore.black
+      });
+    }
+
+    // Reportar progreso
+    onProgress({
+      ai1: gameState.blackScore,
+      ai2: gameState.whiteScore
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 0));
   }
+
+  console.log('\nFin de partida:', {
+    movimientos: moveCount,
+    puntuaciónBlancas: gameState.whiteScore,
+    puntuaciónNegras: gameState.blackScore,
+  });
+
+  return {
+    winner: gameState.blackScore > gameState.whiteScore ? 'AI1' :
+            gameState.whiteScore > gameState.blackScore ? 'AI2' : 'DRAW',
+    finalScore: {
+      ai1: gameState.blackScore,
+      ai2: gameState.whiteScore
+    }
+  };
+}
 
   static generateResultsTable(results: Record<string, BattleResult>): string {
     let table = '| IA1 vs IA2 | Principiante | Amateur | Experto |\n';

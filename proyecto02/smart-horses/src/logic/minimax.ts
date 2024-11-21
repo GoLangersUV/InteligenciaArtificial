@@ -6,11 +6,13 @@ export class Minimax {
   private maxDepth: number;
   private moveCounter: Map<string, number>;
   private readonly MAX_REPETITIONS = 2;
+  private color: 'white' | 'black';
 
   constructor(evaluationFn: (state: GameStateManager) => number, maxDepth: number) {
     this.evaluationFn = evaluationFn;
     this.maxDepth = maxDepth;
     this.moveCounter = new Map<string, number>();
+    this.color = 'white'; // Valor por defecto, se actualiza en getBestMove
   }
 
   private getMoveKey(from: Position, to: Position): string {
@@ -30,18 +32,16 @@ export class Minimax {
   }
 
   getBestMove(state: GameStateManager): Move | null {
+    // Actualizar el color basado en el turno actual
+    this.color = state.currentPlayer;
+    
     console.log('Getting best move for state:', {
       currentPlayer: state.currentPlayer,
       whiteHorse: state.whiteHorse,
       blackHorse: state.blackHorse
     });
 
-    if (state.currentPlayer !== 'black') {
-      console.log('Not AI turn');
-      return null;
-    }
-
-    const currentHorse = state.blackHorse;
+    const currentHorse = this.color === 'white' ? state.whiteHorse : state.blackHorse;
     let possibleMoves = state.getPossibleMoves(currentHorse.position);
     
     console.log('Possible moves:', possibleMoves);
@@ -70,6 +70,7 @@ export class Minimax {
       const success = newState.makeMove(currentHorse.position, to);
       
       if (success) {
+        // Iniciar minimax con isMaximizing=false porque acabamos de hacer nuestro movimiento
         const score = this.minimax(newState, this.maxDepth - 1, false, -Infinity, Infinity);
         
         const immediatePoints = state.board[to.row][to.col].points || 0;
@@ -120,7 +121,12 @@ export class Minimax {
       return this.evaluationFn(state);
     }
 
-    const currentHorse = isMaximizing ? state.blackHorse : state.whiteHorse;
+    // Determinar el caballo actual basado en si estamos maximizando y nuestro color
+    const isOurTurn = state.currentPlayer === this.color;
+    const currentHorse = isOurTurn ? 
+      (this.color === 'white' ? state.whiteHorse : state.blackHorse) :
+      (this.color === 'white' ? state.blackHorse : state.whiteHorse);
+    
     const possibleMoves = state.getPossibleMoves(currentHorse.position);
 
     if (possibleMoves.length === 0) {
