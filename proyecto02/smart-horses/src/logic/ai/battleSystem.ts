@@ -124,7 +124,7 @@ export class AIBattleSystem {
   ai2Difficulty: Difficulty,
   onProgress: (score: { ai1: number; ai2: number }) => void
 ): Promise<MatchResult> {
-  const gameState = new GameStateManager();
+  const gameState = new GameStateManager('white');
   const ai1 = new Minimax(evaluatePositionAI1, DIFFICULTIES[ai1Difficulty].depth);
   const ai2 = new Minimax(evaluatePositionAI2, DIFFICULTIES[ai2Difficulty].depth);
 
