@@ -6,6 +6,13 @@
   background-color: #c7c7c7;
 }
 
+@media (max-width: 820px) {
+  #root {
+    padding: 0; /* Remove padding */
+    margin: 0;  /* Remove margin */
+  }
+}
+
 body {
   width: 100%;
   margin: 0 auto;
