@@ -34,7 +34,8 @@ const GameLayout: React.FC<GameLayoutProps> = ({
   return (
 	<div className="min-h-screen bg-gray-900 text-white p-8 rounded-md">
       {!playerColor ? (
-        <div className="piece-selection text-center bg-gray-800 p-6 rounded-md w-full max-w-xl xl:max-w-6xl mx-auto flex flex-col items-center justify-center min-h-screen">
+        <div className="piece-selection text-center bg-gray-800 p-6 gap-10 rounded-md w-full max-w-xl xl:max-w-6xl mx-auto flex flex-col items-center justify-center min-h-screen">
+		<h1 className="text-5xl font-bold text-center mb-8">Smart Horses</h1>
 		<h2 className="text-2xl font-bold mb-6 text-white">Seleccione su color</h2>
 		<div className="flex items-center justify-center gap-10 px-6 py-6">
 		  <img
@@ -69,13 +70,13 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 							src="SVG/green-horse-white.svg"
 							alt="Pieza Blanca"
 							onClick={() => onPieceSelection('white')}
-							className="cursor-pointer max-h-24 max-w-full h-auto w-1/3"
+							className={`cursor-pointer max-h-24 max-w-full h-auto w-1/3 ${playerColor === 'white' ? 'glow-white' : ''}`}
 						/>
 						<img
 							src="SVG/orange-horse-black.svg"
 							alt="Pieza Negra"
 							onClick={() => onPieceSelection('black')}
-							className="cursor-pointer max-h-24 max-w-full h-auto w-1/3"
+							className={`cursor-pointer max-h-24 max-w-full h-auto w-1/3 ${playerColor === 'black' ? 'glow-white' : ''}`}
 						/>
 						</div>
 	  				  </div>

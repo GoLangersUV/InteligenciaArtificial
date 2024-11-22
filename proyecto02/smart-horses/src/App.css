@@ -67,3 +67,12 @@ select:focus option {
 select:focus option:checked {
   background-color: rgba(59, 10, 246, 0.3); /* More blue transparent color */
 }
+
+/* DO NOT DELETE */
+.glow-white {
+  box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.7);
+}
+
+.glow-black {
+  box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.7);
+}
