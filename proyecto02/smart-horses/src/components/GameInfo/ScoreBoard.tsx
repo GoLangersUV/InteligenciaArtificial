@@ -11,11 +11,11 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({ whiteScore, blackScore }) => {
       <h2 className="text-xl font-bold mb-4 text-black">Puntajes</h2>
       <div className="space-y-2">
         <div className="flex justify-between text-black">
-          <span>Caballo Verde:</span>
+          <span>Caballo Blanco</span>
           <span className="font-bold">{whiteScore}</span>
         </div>
         <div className="flex justify-between text-black">
-          <span>Caballo Naranja:</span>
+          <span>Caballo Negro:</span>
           <span className="font-bold">{blackScore}</span>
         </div>
       </div>

@@ -21,7 +21,7 @@ const Square: React.FC<SquareProps> = ({ position, value, onClick, isSelected })
       className={`
         aspect-square w-full
         relative
-        ${isLightSquare ? 'bg-sky-100' : 'bg-sky-300'}
+        ${isLightSquare ? 'bg-orange-100' : 'bg-orange-300'}
         ${isSelected ? 'ring-2 ring-green-500 z-10' : ''}
         hover:bg-green-100 cursor-pointer
         transition-colors
