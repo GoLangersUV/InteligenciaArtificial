@@ -10,13 +10,13 @@ export class GameStateManager implements GameState {
   blackScore: number;
   currentPlayer: 'white' | 'black';
 
-  constructor() {
+  constructor(startingPlayer: 'white' | 'black') {
     this.board = this.createEmptyBoard();
     this.whiteHorse = { position: { row: 0, col: 0 }, hasMultiplier: false };
     this.blackHorse = { position: { row: 7, col: 7 }, hasMultiplier: false };
     this.whiteScore = 0;
     this.blackScore = 0;
-    this.currentPlayer = 'white';
+    this.currentPlayer = startingPlayer;
     this.initializeRandomBoard();
   }
 
@@ -136,7 +136,7 @@ export class GameStateManager implements GameState {
   }
 
   clone(): GameStateManager {
-    const newState = new GameStateManager();
+    const newState = new GameStateManager(this.currentPlayer);
     newState.board.forEach((row, i) => {
       row.forEach((_, j) => {
         newState.board[i][j] = { ...this.board[i][j] };

@@ -6,13 +6,13 @@ interface HorseProps {
 
 const Horse: React.FC<HorseProps> = ({ type }) => {
   
-  const horseImageSrc = type === 'white' ? '/SVG/green-horse.svg' : '/SVG/orange-horse.svg';
+  const horseImageSrc = type === 'white' ? '/SVG/green-horse-white.svg' : '/SVG/orange-horse-black.svg';
 
   return (
     <img
       src={horseImageSrc}
       alt={`${type} horse`}
-      className="w-full h-full object-contain"
+      className="w-full h-full object-contain drop-shadow-lg"
     />
   );
 };
