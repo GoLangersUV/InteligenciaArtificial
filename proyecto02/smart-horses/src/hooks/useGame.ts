@@ -13,12 +13,12 @@ export function useGame(difficulty: Difficulty) {
   const minimaxRef = useRef(new Minimax(evaluatePositionAI1, DIFFICULTIES[difficulty].depth));
   const isInitialMove = useRef(true);
 
-  const checkGameOver = useCallback((state: GameStateManager) => {
-    if (!state.hasPointsRemaining()) {
-      console.log('Game Over - No points remaining');
-      setIsGameOver(true);
-    }
-  }, []);
+//  const checkGameOver = useCallback((state: GameStateManager) => {
+//    if (!state.hasPointsRemaining()) {
+//      console.log('Game Over - No points remaining');
+//      setIsGameOver(true);
+//    }
+//  }, []);
 
   const makeAIMove = useCallback(() => {
     console.log('makeAIMove called');
