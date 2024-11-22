@@ -43,13 +43,13 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 			src="SVG/green-horse-white.svg"
 			alt="Pieza Blanca"
 			onClick={() => onPieceSelection('white')}
-			className="cursor-pointer max-h-40 max-w-full h-auto w-1/3"
+			className="cursor-pointer max-h-40 max-w-full h-auto w-1/3 drop-shadow-lg"
 		  />
 		  <img
 			src="SVG/orange-horse-black.svg"
 			alt="Pieza Negra"
 			onClick={() => onPieceSelection('black')}
-			className="cursor-pointer max-h-40 max-w-full h-auto w-1/3"
+			className="cursor-pointer max-h-40 max-w-full h-auto w-1/3 drop-shadow-lg"
 		  />
 		</div>
 	  </div>

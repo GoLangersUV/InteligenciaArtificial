@@ -34,14 +34,14 @@ const Square: React.FC<SquareProps> = ({ position, value, onClick, isSelected })
           <img
             src={pointImageSrc}
             alt={`Points ${value.points}`}
-            className="w-full h-full object-contain z-10"
+            className="w-full h-full object-contain z-10 drop-shadow"
           />
         )}
         {multiplierImageSrc && (
           <img
             src={multiplierImageSrc}
             alt="x2 multiplier"
-            className="w-full h-full object-contain z-10"
+            className="w-full h-full object-contain z-10 drop-shadow"
           />
         )}
       </div>

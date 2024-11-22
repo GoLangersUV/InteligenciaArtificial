@@ -12,7 +12,7 @@ const Horse: React.FC<HorseProps> = ({ type }) => {
     <img
       src={horseImageSrc}
       alt={`${type} horse`}
-      className="w-full h-full object-contain"
+      className="w-full h-full object-contain drop-shadow-lg"
     />
   );
 };

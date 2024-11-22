@@ -69,10 +69,10 @@ select:focus option:checked {
 }
 
 /* DO NOT DELETE */
-.glow-white {
+/* .glow-white {
   box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.7);
-}
+} */
 
-.glow-black {
-  box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.7);
+.glow-white {
+  filter: drop-shadow(0 0px 8px rgba(255, 255, 255, 0.5)) drop-shadow(0 0px 3px rgba(255, 255, 255, 0.5));
 }
