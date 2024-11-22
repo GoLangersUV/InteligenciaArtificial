@@ -4,6 +4,7 @@ import { Minimax } from '../logic/minimax';
 import { Position, Difficulty } from '../types/game';
 import { DIFFICULTIES } from '../constants/gameConstants';
 import { evaluatePositionAI1 } from '../logic/ai/ai1';
+import { SoundManager } from '../utils/soundManager';
 
 export function useGame(difficulty: Difficulty) {
   const [gameState, setGameState] = useState<GameStateManager>(new GameStateManager());
@@ -43,6 +44,16 @@ export function useGame(difficulty: Difficulty) {
           
           if (success) {
             console.log('AI move successful', move);
+
+            const toSquareValue = stateCopy.board[move.to.row][move.to.col];
+            const hasReward = toSquareValue.points || toSquareValue.multiplier;
+
+            if (hasReward) {
+              SoundManager.playSound('onReward');
+            } else {
+              SoundManager.playSound('onBoard');
+            }
+
             if (!stateCopy.hasPointsRemaining()) {
               setIsGameOver(true);
             }
@@ -60,12 +71,13 @@ export function useGame(difficulty: Difficulty) {
     });
   }, [aiThinking]);
 
+
   const handleSquareClick = useCallback((position: Position) => {
     if (aiThinking || isGameOver || gameState.currentPlayer !== 'white') {
       console.log('Click ignored - invalid state');
       return;
     }
-
+  
     if (!selectedSquare) {
       if (
         position.row === gameState.whiteHorse.position.row && 
@@ -78,6 +90,15 @@ export function useGame(difficulty: Difficulty) {
       const moveSuccess = newGameState.makeMove(selectedSquare, position);
       
       if (moveSuccess) {
+        const toSquareValue = newGameState.board[position.row][position.col];
+        const hasReward = toSquareValue.points || toSquareValue.multiplier;
+  
+        if (hasReward) {
+          SoundManager.playSound('onReward');
+        } else {
+          SoundManager.playSound('onBoard');
+        }
+  
         setGameState(newGameState);
         setSelectedSquare(null);
         
@@ -92,6 +113,7 @@ export function useGame(difficulty: Difficulty) {
       }
     }
   }, [gameState, selectedSquare, isGameOver, aiThinking, makeAIMove]);
+  
 
   // Efecto para inicializar el juego
   useEffect(() => {

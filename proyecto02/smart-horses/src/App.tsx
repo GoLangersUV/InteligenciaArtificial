@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Difficulty } from './types/game';
 import { useGame } from './hooks/useGame';
 import GameLayout from './components/Layout/GameLayout';
+import { SoundManager } from './utils/soundManager';
 import './App.css';
 
 function App() {
@@ -13,6 +14,10 @@ function App() {
     handleSquareClick,
     resetGame
   } = useGame(difficulty);
+
+  useEffect(() => {
+    SoundManager.loadSounds();
+  }, []);
 
   const handleDifficultyChange = (newDifficulty: Difficulty) => {
     setDifficulty(newDifficulty);

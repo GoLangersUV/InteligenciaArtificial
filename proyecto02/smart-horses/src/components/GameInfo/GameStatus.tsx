@@ -6,7 +6,7 @@ interface GameStatusProps {
 const GameStatus: React.FC<GameStatusProps> = ({ isGameOver, winner }) => {
   if (!isGameOver) return null;
 
-  const message = winner === 'draw' ? '¡Empate!' : `Ganador: ${winner === 'white' ? 'Blancas' : 'Negras'}`;
+  const message = winner === 'draw' ? '¡Empate!' : `Ganador: ${winner === 'white' ? 'Verde' : 'Naranja'}`;
 
   return (
     <div className="text-xl font-bold text-center p-4 mt-10 bg-yellow-400 rounded">
