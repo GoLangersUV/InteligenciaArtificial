@@ -30,7 +30,7 @@ const AIBattleTest: React.FC = () => {
 
   return (
     <div className="p-4 bg-gray-800 rounded-lg max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col min-[480px]:flex-row items-center justify-between mb-6">
         <div className="text-left">
           <h2 className="text-xl font-bold text-white">Pruebas AI vs AI</h2>
           <p className="mt-2 text-sm text-gray-300">
@@ -40,7 +40,7 @@ const AIBattleTest: React.FC = () => {
         <button
           onClick={runBattles}
           disabled={isRunning}
-          className="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-600 hover:bg-blue-700 transition-colors font-semibold"
+          className="mt-6 min-[480px]:mt-0 px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-600 hover:bg-blue-700 transition-colors font-semibold"
         >
           {isRunning ? 'Ejecutando...' : 'Iniciar pruebas'}
         </button>

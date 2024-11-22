@@ -26,9 +26,10 @@ const GameLayout: React.FC<GameLayoutProps> = ({
   onDifficultyChange,
   onReset
 }) => {
+  const currentYear = new Date().getFullYear();
   return (
       <div className="min-h-screen bg-gray-900 text-white p-8 rounded-md">
-		  <div className=" w-[720px] xl:max-w-6xl xl:w-full mx-auto">
+		  <div className="w-full xl:max-w-6xl xl:w-full mx-auto">
 			  {/* Header */}
 			  <h1 className="text-5xl font-bold text-center mb-8">Smart Horses</h1>
 			  <div className="max-w-5xl mx-auto">
@@ -49,8 +50,8 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 					  </div>
 
 					  {/* Game info sidebar */}
-					  <div className="flex flex-row xl:flex-col w-full xl:space-y6 space-x-4 xl:space-x-0">
-						  <div className="w-1/2 flex flex-col gap-4 xl:w-full">
+					  <div className="flex flex-col min-[520px]:flex-row xl:flex-col w-full xl:space-y6 space-x-0 min-[520px]:space-x-4 xl:space-x-0">
+						  <div className="w-full min-[520px]:w-1/2 flex flex-col gap-4 xl:w-full">
 							  <ScoreBoard
 								  whiteScore={gameState.whiteScore}
 								  blackScore={gameState.blackScore}
@@ -72,7 +73,7 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 						  </div>
 						  
 						  {/* Instrucciones */}
-						  <div className="bg-gray-800 text-left rounded-lg p-4 w-1/2 xl:w-full xl:mt-12">
+						  <div className="bg-gray-800 text-left rounded-lg p-4 w-full min-[520px]:w-1/2 xl:w-full xl:mt-12">
 							  <h3 className="font-bold mb-3">Instrucciones:</h3>
 							  <ul className="space-y-2 text-gray-300">
 								  <li>• Haz click en el caballo blanco para seleccionarlo</li>
@@ -100,6 +101,9 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 				  </div>
 			  </div>
 		  </div>
+		  <p className="read-the-docs mt-8">
+                © {currentYear}. Molina, JS; Narvaéz, JC; Pacheco, CD; Puyo, JE. Inteligencia Artificial; Ingeniería en sistemas; EISC<br/> Todos los derechos reservados.
+            </p>
       </div>
   );
 };
