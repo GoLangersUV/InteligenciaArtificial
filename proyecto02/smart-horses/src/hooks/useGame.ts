@@ -6,8 +6,8 @@ import { DIFFICULTIES } from '../constants/gameConstants';
 import { evaluatePositionAI1 } from '../logic/ai/ai1';
 import { SoundManager } from '../utils/soundManager';
 
-export function useGame(difficulty: Difficulty) {
-  const [gameState, setGameState] = useState<GameStateManager>(new GameStateManager());
+export function useGame(difficulty: Difficulty, playerColor: 'white' | 'black' | null) {
+  const [gameState, setGameState] = useState<GameStateManager>(new GameStateManager('white'));
   const [selectedSquare, setSelectedSquare] = useState<Position | null>(null);
   const [isGameOver, setIsGameOver] = useState(false);
   const [aiThinking, setAiThinking] = useState(false);
@@ -21,70 +21,61 @@ export function useGame(difficulty: Difficulty) {
 //    }
 //  }, []);
 
-  const makeAIMove = useCallback(() => {
-    console.log('makeAIMove called');
-    
-    setGameState(currentState => {
-      if (currentState.currentPlayer !== 'black' || aiThinking) {
-        console.log('makeAIMove cancelled', { 
-          currentPlayer: currentState.currentPlayer, 
-          aiThinking 
-        });
-        return currentState;
-      }
+const makeAIMove = useCallback(() => {
+  setGameState((currentState) => {
+    if (currentState.currentPlayer === playerColor || aiThinking) {
+      return currentState;
+    }
 
-      setAiThinking(true);
-      
-      try {
-        const stateCopy = currentState.clone();
-        const move = minimaxRef.current.getBestMove(stateCopy);
-        
-        if (move) {
-          const success = stateCopy.makeMove(move.from, move.to);
-          
-          if (success) {
-            console.log('AI move successful', move);
+    setAiThinking(true);
 
-            const toSquareValue = stateCopy.board[move.to.row][move.to.col];
-            const hasReward = toSquareValue.points || toSquareValue.multiplier;
+    try {
+      const stateCopy = currentState.clone();
+      const move = minimaxRef.current.getBestMove(stateCopy);
 
-            if (hasReward) {
-              SoundManager.playSound('onReward');
-            } else {
-              SoundManager.playSound('onBoard');
-            }
+      if (move) {
+        const success = stateCopy.makeMove(move.from, move.to);
 
-            if (!stateCopy.hasPointsRemaining()) {
-              setIsGameOver(true);
-            }
-            return stateCopy;
+        if (success) {
+          // Handle move success...
+          if (!stateCopy.hasPointsRemaining()) {
+            setIsGameOver(true);
           }
+          return stateCopy;
         }
-        
-        return currentState;
-      } catch (error) {
-        console.error('Error in AI move:', error);
-        return currentState;
-      } finally {
-        setAiThinking(false);
       }
-    });
-  }, [aiThinking]);
+
+      return currentState;
+    } catch (error) {
+      console.error('Error in AI move:', error);
+      return currentState;
+    } finally {
+      setAiThinking(false);
+    }
+  });
+}, [aiThinking, playerColor]);
 
 
   const handleSquareClick = useCallback((position: Position) => {
-    if (aiThinking || isGameOver || gameState.currentPlayer !== 'white') {
+    if (aiThinking || isGameOver || gameState.currentPlayer !== playerColor) {
       console.log('Click ignored - invalid state');
       return;
     }
   
     if (!selectedSquare) {
-      if (
+      if ( playerColor === 'white' && 
         position.row === gameState.whiteHorse.position.row && 
         position.col === gameState.whiteHorse.position.col
       ) {
         setSelectedSquare(position);
       }
+      if ( playerColor === 'black' && 
+        position.row === gameState.blackHorse.position.row && 
+        position.col === gameState.blackHorse.position.col
+      ) {
+        setSelectedSquare(position);
+      }
+
     } else {
       const newGameState = gameState.clone();
       const moveSuccess = newGameState.makeMove(selectedSquare, position);
@@ -112,36 +103,53 @@ export function useGame(difficulty: Difficulty) {
         setSelectedSquare(null);
       }
     }
-  }, [gameState, selectedSquare, isGameOver, aiThinking, makeAIMove]);
+  }, [gameState, selectedSquare, isGameOver, aiThinking, makeAIMove, playerColor]);
   
 
   // Efecto para inicializar el juego
   useEffect(() => {
-    const newGameState = new GameStateManager();
-    setGameState(newGameState);
-    setSelectedSquare(null);
-    setIsGameOver(false);
-    setAiThinking(false);
-    isInitialMove.current = true;
-    minimaxRef.current = new Minimax(evaluatePositionAI1, DIFFICULTIES[difficulty].depth);
-  }, [difficulty]);
+    if (playerColor) {
+      const newGameState = new GameStateManager('white'); // White always starts
+      setGameState(newGameState);
+      // Reset other states...
+      isInitialMove.current = true;
+  
+      minimaxRef.current = new Minimax(evaluatePositionAI1, DIFFICULTIES[difficulty].depth);
+  
+      if (playerColor === 'black') {
+        // AI makes the first move
+        setTimeout(makeAIMove, 500);
+      }
+    }
+  }, [difficulty, playerColor, makeAIMove]);
 
   // Efecto para el primer movimiento de la IA si le toca
   useEffect(() => {
-    if (isInitialMove.current && gameState.currentPlayer === 'black' && !aiThinking) {
+    if (
+      isInitialMove.current &&
+      gameState.currentPlayer !== playerColor &&
+      !aiThinking
+    ) {
       isInitialMove.current = false;
       setTimeout(makeAIMove, 500);
     }
-  }, [gameState, makeAIMove, aiThinking]);
+  }, [gameState, makeAIMove, aiThinking, playerColor]);
 
   const resetGame = useCallback(() => {
-    const newGameState = new GameStateManager();
-    setGameState(newGameState);
-    setSelectedSquare(null);
-    setIsGameOver(false);
-    setAiThinking(false);
-    isInitialMove.current = true;
-  }, []);
+    if (playerColor) {
+      const newGameState = new GameStateManager('white'); // White always starts
+      setGameState(newGameState);
+      setSelectedSquare(null);
+      setIsGameOver(false);
+      setAiThinking(false);
+      isInitialMove.current = true;
+  
+      if (playerColor === 'black') {
+        // AI makes the first move
+        setTimeout(makeAIMove, 500);
+      }
+    }
+  }, [playerColor, makeAIMove]);
 
   return {
     gameState,

@@ -15,6 +15,8 @@ interface GameLayoutProps {
   onSquareClick: (position: Position) => void;
   onDifficultyChange: (difficulty: Difficulty) => void;
   onReset: () => void;
+  playerColor: 'white' | 'black' | null;
+  onPieceSelection: (color: 'white' | 'black' | null) => void;
 }
 
 const GameLayout: React.FC<GameLayoutProps> = ({
@@ -24,20 +26,59 @@ const GameLayout: React.FC<GameLayoutProps> = ({
   selectedSquare,
   onSquareClick,
   onDifficultyChange,
-  onReset
+  onReset,
+  playerColor,
+  onPieceSelection,
 }) => {
   const currentYear = new Date().getFullYear();
   return (
+	<div className="min-h-screen bg-gray-900 text-white p-8 rounded-md">
+      {!playerColor ? (
+        <div className="piece-selection text-center bg-gray-800 p-6 rounded-md w-full max-w-xl xl:max-w-6xl mx-auto flex flex-col items-center justify-center min-h-screen">
+		<h2 className="text-2xl font-bold mb-6 text-white">Seleccione su color</h2>
+		<div className="flex items-center justify-center gap-10 px-6 py-6">
+		  <img
+			src="SVG/green-horse-white.svg"
+			alt="Pieza Blanca"
+			onClick={() => onPieceSelection('white')}
+			className="cursor-pointer max-h-40 max-w-full h-auto w-1/3"
+		  />
+		  <img
+			src="SVG/orange-horse-black.svg"
+			alt="Pieza Negra"
+			onClick={() => onPieceSelection('black')}
+			className="cursor-pointer max-h-40 max-w-full h-auto w-1/3"
+		  />
+		</div>
+	  </div>
+      ) : gameState ? (
       <div className="min-h-screen bg-gray-900 text-white p-8 rounded-md">
 		  <div className="w-full xl:max-w-6xl xl:w-full mx-auto">
 			  {/* Header */}
 			  <h1 className="text-5xl font-bold text-center mb-8">Smart Horses</h1>
 			  <div className="max-w-5xl mx-auto">
-				  <div className="mb-8 text-center">
+				  <div className="mb-8 text-center w-full gap-2">
 					  <DifficultySelector
 						  difficulty={difficulty}
 						  onSelect={onDifficultyChange}
 					  />
+					  <div className="piece-selection text-center bg-gray-800 p-2 gap-1 xl:gap-20 rounded-md w-full max-w-xl xl:max-w-6xl mx-auto flex flex-row items-center justify-center">
+						<h2 className="text-l xl:text-xl font-bold text-white">Seleccione su color</h2>
+						<div className="flex items-center justify-center gap-1 xl:gap-20 px-1 py-1">
+						<img
+							src="SVG/green-horse-white.svg"
+							alt="Pieza Blanca"
+							onClick={() => onPieceSelection('white')}
+							className="cursor-pointer max-h-24 max-w-full h-auto w-1/3"
+						/>
+						<img
+							src="SVG/orange-horse-black.svg"
+							alt="Pieza Negra"
+							onClick={() => onPieceSelection('black')}
+							className="cursor-pointer max-h-24 max-w-full h-auto w-1/3"
+						/>
+						</div>
+	  				  </div>
 				  </div>
 				  <div className="flex flex-col xl:flex-row justify-center gap-8">
 					  {/* Game board */}
@@ -67,7 +108,7 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 							  {/* Turno actual */}
 							  <div className="bg-gray-800 rounded-lg p-4">
 								  <p className="text-center font-medium">
-									  Turno: {gameState.currentPlayer === 'white' ? 'Jugador' : 'IA'}
+									  Turno: {gameState.currentPlayer === playerColor ? 'Jugador' : 'IA'}
 								  </p>
 							  </div>
 						  </div>
@@ -104,7 +145,10 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 		  <p className="read-the-docs mt-8">
                 © {currentYear}. Molina, JS; Narvaéz, JC; Pacheco, CD; Puyo, JE. Inteligencia Artificial; Ingeniería en sistemas; EISC<br/> Todos los derechos reservados.
             </p>
-      </div>
+      </div> ) : (
+        <div>Loading...</div>
+      )}
+    </div>
   );
 };
 
