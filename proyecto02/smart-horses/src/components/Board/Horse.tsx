@@ -5,11 +5,15 @@ interface HorseProps {
 }
 
 const Horse: React.FC<HorseProps> = ({ type }) => {
-  const symbol = type === 'white' ? '♞': '♞';
-  const color = type === 'white' ? 'text-red' : 'text-black';
+  
+  const horseImageSrc = type === 'white' ? '/SVG/green-horse.svg' : '/SVG/orange-horse.svg';
 
   return (
-    <div className={`text-3xl drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] ${color}`}>{symbol}</div>
+    <img
+      src={horseImageSrc}
+      alt={`${type} horse`}
+      className="w-full h-full object-contain"
+    />
   );
 };
 

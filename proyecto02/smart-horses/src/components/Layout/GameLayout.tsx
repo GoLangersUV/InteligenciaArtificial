@@ -76,7 +76,7 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 						  <div className="bg-gray-800 text-left rounded-lg p-4 w-full min-[520px]:w-1/2 xl:w-full xl:mt-12">
 							  <h3 className="font-bold mb-3">Instrucciones:</h3>
 							  <ul className="space-y-2 text-gray-300">
-								  <li>• Haz click en el caballo blanco para seleccionarlo</li>
+								  <li>• Haz click en el caballo para seleccionarlo</li>
 								  <li>• Haz click en una casilla válida para mover</li>
 								  <li>• Obtén puntos al llegar a casillas numeradas</li>
 								  <li>• x2 multiplica los siguientes puntos que obtengas</li>
