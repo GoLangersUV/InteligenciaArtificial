@@ -93,8 +93,17 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 					  </div>
 
 					  {/* Game info sidebar */}
-					  <div className="flex flex-col min-[520px]:flex-row xl:flex-col w-full xl:space-y6 space-x-0 min-[520px]:space-x-4 xl:space-x-0">
+					  <div className="flex flex-col min-[520px]:flex-row xl:flex-col w-full xl:space-y6 space-x-0 min-[520px]:space-x-4 xl:space-x-0 gap-y-4">
 						  <div className="w-full min-[520px]:w-1/2 flex flex-col gap-4 xl:w-full">
+						  		{/* Game status */}	
+								{isGameOver && (
+									<GameStatus
+										isGameOver={isGameOver}
+										winner={gameState.whiteScore > gameState.blackScore ? 'white' : 
+																		gameState.blackScore > gameState.whiteScore ? 'black' : 'draw'}
+									/>	
+								)}
+
 							  <ScoreBoard
 								  whiteScore={gameState.whiteScore}
 								  blackScore={gameState.blackScore}
@@ -126,13 +135,6 @@ const GameLayout: React.FC<GameLayoutProps> = ({
 							  </ul>
 						  </div>
 
-						  {isGameOver && (
-							  <GameStatus
-								  isGameOver={isGameOver}
-								  winner={gameState.whiteScore > gameState.blackScore ? 'white' : 
-																 gameState.blackScore > gameState.whiteScore ? 'black' : 'draw'}
-							  />
-						  )}
 					  </div>
 				  </div>
 			  </div>

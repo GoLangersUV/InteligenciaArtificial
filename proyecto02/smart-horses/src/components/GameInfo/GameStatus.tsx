@@ -9,7 +9,7 @@ const GameStatus: React.FC<GameStatusProps> = ({ isGameOver, winner }) => {
   const message = winner === 'draw' ? '¡Empate!' : `Ganador: ${winner === 'white' ? 'Blanco' : 'Negro'}`;
 
   return (
-    <div className="text-xl font-bold text-center p-4 mt-10 bg-yellow-400 rounded">
+    <div className="text-xl font-bold text-center p-4 bg-yellow-400 rounded">
       {message}
     </div>
   );
